@@ -1,0 +1,619 @@
+<title>Saucier Field Tickets</title>
+<meta name="theme-color" content="#1d3347">
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Layout: one-column phone tool; sticky header, content cards by role, fixed bottom tab bar. Copper accent = copper pipe, slate = service truck. */
+:root{
+  --bg:#f3f5f7; --surface:#ffffff; --sunk:#e8edf1; --fg:#17222c; --muted:#5b6b78; --line:#d3dbe2;
+  --accent:#a8571f; --accent-fg:#ffffff; --brand:#1d3347; --brand-fg:#f3f6f8;
+  --ok:#1f7a4a; --ok-bg:#e1f2e8; --warn:#8a5a00; --warn-bg:#fdf0d2; --bad:#b3261e; --bad-bg:#fbe3e1; --info-bg:#e3edf6;
+  --f-display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:10px; --paper:#ffffff; /* signature pad stays white paper with dark ink in both themes */
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f161c; --surface:#18222b; --sunk:#202c36; --fg:#e7edf1; --muted:#9aabb8; --line:#2e3c48;
+  --accent:#e08a4c; --accent-fg:#1a0e05; --brand:#0b1218; --brand-fg:#e7edf1;
+  --ok:#6fd39c; --ok-bg:#163526; --warn:#f2c46b; --warn-bg:#3a2d10; --bad:#ff8f86; --bad-bg:#3d1a18; --info-bg:#1b2c3b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f161c; --surface:#18222b; --sunk:#202c36; --fg:#e7edf1; --muted:#9aabb8; --line:#2e3c48;
+  --accent:#e08a4c; --accent-fg:#1a0e05; --brand:#0b1218; --brand-fg:#e7edf1;
+  --ok:#6fd39c; --ok-bg:#163526; --warn:#f2c46b; --warn-bg:#3a2d10; --bad:#ff8f86; --bad-bg:#3d1a18; --info-bg:#1b2c3b; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.4;margin:0}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:.01em}
+h2{font-size:1.35rem} h3{font-size:1.1rem}
+button,input,select,textarea{font:inherit;color:inherit}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--brand);color:var(--brand-fg);padding:10px 16px;display:flex;align-items:center;gap:10px}
+.top h1{font-size:1.25rem;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .crew{font-size:.8rem;opacity:.85;text-transform:uppercase;letter-spacing:.06em}
+.iconbtn{background:transparent;border:1px solid rgba(255,255,255,.3);color:var(--brand-fg);border-radius:8px;padding:6px 10px;font-size:.85rem}
+main{padding:12px 16px 110px;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs button{flex:1;background:none;border:0;padding:10px 2px 12px;font-family:var(--f-display);font-weight:600;font-size:.95rem;color:var(--muted);border-top:3px solid transparent}
+.tabs button[aria-current="page"]{color:var(--accent);border-top-color:var(--accent)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row>*{min-width:0}
+.grow{flex:1}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px}
+@media (max-width:420px){.grid3{grid-template-columns:1fr 1fr}.grid3>:first-child{grid-column:1/-1}}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;min-width:0}
+input,select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:16px;width:100%;min-width:0}
+textarea{min-height:70px;resize:vertical}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 14px;font-weight:600;cursor:pointer;min-height:44px}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn.dark{background:var(--brand);color:var(--brand-fg);border-color:var(--brand)}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.small{min-height:34px;padding:6px 10px;font-size:.9rem}
+.btn:disabled{opacity:.45}
+.muted{color:var(--muted)} .small{font-size:.85rem}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill{display:inline-block;border-radius:999px;padding:2px 10px;font-size:.78rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap}
+.p-open{background:var(--warn-bg);color:var(--warn)} .p-complete{background:var(--info-bg);color:var(--fg)}
+.p-sent{background:var(--ok-bg);color:var(--ok)} .p-invoiced{background:var(--sunk);color:var(--muted)}
+.p-day{background:var(--sunk);color:var(--fg)} .p-prem{background:var(--warn-bg);color:var(--warn)} .p-hol{background:var(--bad-bg);color:var(--bad)}
+.note{border-radius:8px;padding:10px 12px;font-size:.92rem}
+.note.warn{background:var(--warn-bg);color:var(--warn)} .note.bad{background:var(--bad-bg);color:var(--bad)} .note.ok{background:var(--ok-bg);color:var(--ok)} .note.info{background:var(--info-bg)}
+.list{display:flex;flex-direction:column}
+.item{display:flex;gap:10px;align-items:center;padding:11px 2px;border-bottom:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-top:0;text-align:left;width:100%}
+.item:last-child{border-bottom:0}
+.item .t{font-weight:600}
+.item .s{font-size:.85rem;color:var(--muted)}
+.item .price{font-family:var(--f-display);font-weight:700;font-size:1.15rem}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;white-space:nowrap;font-size:.9rem}
+.chip[aria-pressed="true"]{background:var(--brand);color:var(--brand-fg);border-color:var(--brand)}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{flex:1;border:0;background:var(--surface);padding:8px 6px;font-weight:600;font-size:.9rem}
+.seg button[aria-pressed="true"]{background:var(--brand);color:var(--brand-fg)}
+.line{display:grid;grid-template-columns:1fr auto;gap:6px 10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.line:last-child{border-bottom:0}
+.stepper{display:flex;align-items:center;gap:4px}
+.stepper button{width:38px;height:38px;border-radius:8px;border:1px solid var(--line);background:var(--sunk);font-size:1.2rem;font-weight:700}
+.stepper input{width:64px;text-align:center;padding:8px 4px}
+table{border-collapse:collapse;width:100%}
+th,td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+td.r,th.r{text-align:right}
+.scroll{overflow-x:auto}
+.total{font-family:var(--f-display);font-size:1.6rem;font-weight:700}
+.sig{border:1px dashed var(--muted);border-radius:8px;background:var(--paper);touch-action:none;width:100%;height:140px;display:block}
+.photos{display:flex;gap:8px;flex-wrap:wrap}
+.photos figure{margin:0;position:relative}
+.photos img{width:84px;height:84px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.photos button{position:absolute;top:-6px;right:-6px;border-radius:999px;border:0;background:var(--bad);color:#fff;width:24px;height:24px;font-size:.8rem}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:.98rem}
+.check input{width:22px;height:22px;flex:none;margin-top:1px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:84px;background:var(--brand);color:var(--brand-fg);padding:10px 16px;border-radius:999px;z-index:9;font-weight:600;max-width:90vw}
+.pickbar{position:sticky;top:calc(env(safe-area-inset-top,0px) + 52px);z-index:4;background:var(--accent);color:var(--accent-fg);border-radius:var(--r);padding:10px 12px;display:flex;align-items:center;gap:10px}
+.pickbar .btn{background:var(--accent-fg);color:var(--accent);border:0;min-height:36px}
+pre.out{white-space:pre-wrap;word-break:break-word;background:var(--sunk);border-radius:8px;padding:10px;font-size:.8rem;max-height:220px;overflow:auto;margin:0}
+.kv{display:grid;grid-template-columns:1fr auto;gap:4px 12px}
+.demo{background:var(--info-bg);border-radius:8px;padding:8px 12px;font-size:.88rem}
+details>summary{cursor:pointer;font-family:var(--f-display);font-weight:600;font-size:1.05rem}
+@media (prefers-reduced-motion:no-preference){.toast{animation:up .18s ease-out}@keyframes up{from{transform:translate(-50%,8px);opacity:0}}}
+</style>
+
+<header class="top">
+  <h1 id="hdr">Saucier Field Tickets</h1>
+  <span class="crew" id="hdrCrew"></span>
+  <button class="iconbtn" data-act="go" data-v="settings" aria-label="Settings">Settings</button>
+</header>
+<main id="main"></main>
+<nav class="tabs" id="tabs"></nav>
+<div id="toastHost"></div>
+
+<script>
+"use strict";
+const DATA = /*__DATA__*/null;
+const DEMO = /*__DEMO__*/false;
+const APP_VER = "1.0";
+
+/* ---------- settings & rules (from the Part 1 price book and Part 2 pay plan) ---------- */
+const RULES = {
+  laborRate: 275, minTicket: 275, leadRate: 43, helperRate: 27, mtlMarkup: 1.0, dispatch: 95,
+  mult: {"Mon-Thu":1, "Friday":1, "Weekend":1.5, "Holiday":2, "Emergency":1.5},
+  minWage: 7.25, otAfter: 40, otFactor: .5, stdBook: 30, holHrs: 10,
+  ptoLead: 32.25, ptoHelper: 20.25
+};
+const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const KEY = "saucierField.v1";
+
+/* ---------- storage ---------- */
+let S;
+function blank(){return {settings:{lead:"",helper:"",crew:1,officeEmail:"",acctEmail:"",showPay:true,office:false,ptoLead:RULES.ptoLead,ptoHelper:RULES.ptoHelper,terms:"Due on receipt"},tickets:[],weeks:{},prices:null,customers:{}}}
+function load(){try{const j=localStorage.getItem(KEY);if(j){const o=JSON.parse(j);const b=blank();o.settings=Object.assign(b.settings,o.settings||{});return Object.assign(b,o)}}catch(e){}return null}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));return true}catch(e){toast("Could not save on this device. Storage may be full: clear old tickets in Settings.");return false}}
+
+/* photos in IndexedDB */
+let idb=null;
+function openDB(){return new Promise(res=>{try{const r=indexedDB.open("saucierPhotos",1);r.onupgradeneeded=()=>r.result.createObjectStore("p");r.onsuccess=()=>{idb=r.result;res(idb)};r.onerror=()=>res(null)}catch(e){res(null)}})}
+function pPut(id,data){return new Promise(res=>{if(!idb)return res(false);try{const t=idb.transaction("p","readwrite");t.objectStore("p").put(data,id);t.oncomplete=()=>res(true);t.onerror=()=>res(false)}catch(e){res(false)}})}
+function pGet(id){return new Promise(res=>{if(!idb)return res(null);try{const r=idb.transaction("p").objectStore("p").get(id);r.onsuccess=()=>res(r.result||null);r.onerror=()=>res(null)}catch(e){res(null)}})}
+function pDel(id){try{idb&&idb.transaction("p","readwrite").objectStore("p").delete(id)}catch(e){}}
+
+/* ---------- price book ---------- */
+let ITEMS=[], BYSKU={};
+function qboName(sku,name){return (sku+" "+String(name).trim()).replace(/:/g,"-").replace(/'/g,"").slice(0,100)}
+function setPrices(items){
+  ITEMS=items.filter(i=>i.sku!=="FEE-005");
+  BYSKU={};ITEMS.forEach(i=>{i.qbo=i.qbo||qboName(i.sku,i.name);BYSKU[i.sku]=i});
+}
+function priceFor(it,dt){return dt==="Holiday"?it.hol:(dt==="Weekend"||dt==="Emergency")?it.ah:it.list}
+const FEE = n => DATA.fees[n][0];
+
+/* ---------- dates & day type ---------- */
+const pad=n=>String(n).padStart(2,"0");
+function iso(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+function parse(s){const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)}
+function today(){return iso(new Date())}
+function mondayOf(s){const d=parse(s);const k=(d.getDay()+6)%7;d.setDate(d.getDate()-k);return iso(d)}
+function addDays(s,n){const d=parse(s);d.setDate(d.getDate()+n);return iso(d)}
+function dayName(s){return DAYS[(parse(s).getDay()+6)%7]}
+function holidayName(s){const h=holidays().find(h=>h[0]===s);return h?h[1]:""}
+function holidays(){return (S&&S.holidays)||DATA.hol}
+function dayType(s,emerg){if(holidayName(s))return "Holiday";const k=(parse(s).getDay()+6)%7;if(k>=5)return "Weekend";if(k===4)return "Friday";return emerg?"Emergency":"Mon-Thu"}
+function usd(n){return (n<0?"-":"")+"$"+Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function hrs(n){return (Math.round(n*100)/100).toString()}
+function fmtDate(s){const d=parse(s);return DAYS[(d.getDay()+6)%7].slice(0,3)+" "+(d.getMonth()+1)+"/"+d.getDate()}
+function mdy(s){const d=parse(s);return pad(d.getMonth()+1)+"/"+pad(d.getDate())+"/"+d.getFullYear()}
+const r2=n=>Math.round(n*100)/100;
+const q4=n=>Math.round(Number(n||0)*4)/4;
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+/* ---------- ticket math ---------- */
+function custLabel(t){const c=t.customer||{};return [c.name,[c.street,c.city].filter(Boolean).join(", ")].filter(Boolean).join(" - ")}
+function isStandAlone(t){
+  if(t.standAlone==="yes")return true; if(t.standAlone==="no")return false;
+  const sk=t.lines.filter(l=>BYSKU[l.sku]);
+  return sk.length===1&&Number(sk[0].qty)===1&&!(Number(t.tm.lead)>0||Number(t.tm.helper)>0)&&BYSKU[sk[0].sku].sa>BYSKU[sk[0].sku].list;
+}
+function calc(t){
+  const dt=dayType(t.date,t.emergency), m=RULES.mult[dt];
+  const inv=[], hasHelper=!!(t.helper||"").trim();
+  let leadPay=0, helperPay=0, leadHrs=0, helperHrs=0, book=0;
+  const premCode = dt==="Holiday"?"FEE-003":(m>1?"FEE-002":null);
+  const premLabel = dt==="Holiday"?"Holiday premium":"After-hours premium";
+  t.lines.forEach(l=>{
+    const it=BYSKU[l.sku]; if(!it)return; const q=Number(l.qty)||0; if(q<=0)return;
+    inv.push({item:it.qbo,code:it.sku,desc:it.name,qty:q,rate:it.list,amt:r2(q*it.list)});
+    if(premCode){const p=priceFor(it,dt)-it.list;if(p>0)inv.push({item:FEE(premCode),code:premCode,desc:premLabel+" - "+it.name,qty:q,rate:p,amt:r2(q*p)})}
+    const ph=it.hrs*q; book+=ph; const crew=hasHelper?(l.crew||"Both"):"Lead";
+    if(crew!=="Helper"){leadPay+=ph*m*RULES.leadRate;leadHrs+=ph}
+    if(crew!=="Lead"&&hasHelper){helperPay+=ph*m*RULES.helperRate;helperHrs+=ph}
+  });
+  if(isStandAlone(t)){const l=t.lines.find(l=>BYSKU[l.sku]);if(l){const it=BYSKU[l.sku];const d=it.sa-it.list;if(d>0)inv.push({item:FEE("FEE-004"),code:"FEE-004",desc:"Stand-alone minimum - "+it.name,qty:1,rate:d,amt:d})}}
+  const tl=q4(t.tm.lead), th=hasHelper?q4(t.tm.helper):0, tmh=tl+th;
+  if(tmh>0){
+    inv.push({item:FEE("FEE-005"),code:"FEE-005",desc:"Time and material labor ("+[tl?"Lead "+hrs(tl)+" hr":"",th?"Helper "+hrs(th)+" hr":""].filter(Boolean).join(", ")+")",qty:tmh,rate:RULES.laborRate,amt:r2(tmh*RULES.laborRate)});
+    if(premCode)inv.push({item:FEE(premCode),code:premCode,desc:premLabel+" - T&M labor",qty:tmh,rate:r2(RULES.laborRate*(m-1)),amt:r2(tmh*RULES.laborRate*(m-1))});
+    leadPay+=tl*m*RULES.leadRate; helperPay+=th*m*RULES.helperRate; leadHrs+=tl; helperHrs+=th;
+  }
+  const mc=Number(t.tm.mtl)||0; if(mc>0){const p=r2(mc*(1+RULES.mtlMarkup));inv.push({item:FEE("FEE-006"),code:"FEE-006",desc:"Materials"+(t.tm.mtlDesc?": "+t.tm.mtlDesc:""),qty:1,rate:p,amt:p})}
+  const base=r2(inv.reduce((a,x)=>a+((BYSKU[x.code]||["FEE-004","FEE-005","FEE-006"].includes(x.code))?x.amt:0),0));
+  if(base>0&&base<RULES.minTicket){const d=r2(RULES.minTicket-base);inv.push({item:FEE("FEE-004"),code:"FEE-004",desc:"Minimum charge adjustment ("+usd(RULES.minTicket)+" job minimum)",qty:1,rate:d,amt:d})}
+  const pm=Number(t.tm.permit)||0; if(pm>0)inv.push({item:FEE("FEE-007"),code:"FEE-007",desc:"Permit fee (at cost)",qty:1,rate:pm,amt:pm});
+  if(t.dispatch)inv.push({item:FEE("FEE-001"),code:"FEE-001",desc:"Dispatch / service call fee",qty:1,rate:RULES.dispatch,amt:RULES.dispatch});
+  const total=r2(inv.reduce((a,b)=>a+b.amt,0));
+  return {dt,m,inv,total,book,tmh,leadPay:r2(leadPay),helperPay:r2(helperPay),leadHrs,helperHrs,hasHelper};
+}
+function ticketIssues(t){
+  const out=[], c=calc(t);
+  if(!(t.customer.name||"").trim())out.push("Customer name is missing");
+  if(!(t.customer.street||"").trim())out.push("Job address is missing");
+  if(!c.inv.some(x=>x.code!=="FEE-001"&&x.code!=="FEE-007"))out.push("No work on the ticket (add a price-book task or T&M hours)");
+  t.lines.forEach(l=>{if(!BYSKU[l.sku])out.push("Unknown SKU "+l.sku);if(Math.abs(q4(l.qty)-Number(l.qty))>1e-9)out.push(l.sku+": quantity must be in 0.25 steps")});
+  if(t.lines.some(l=>BYSKU[l.sku])&&(Number(t.tm.lead)>0||Number(t.tm.helper)>0))out.push("Has both price-book tasks and T&M hours: make sure the T&M part was approved");
+  if(!t.sig)out.push("No customer signature");
+  if(!t.check.done)out.push("Completion checklist not ticked");
+  return out;
+}
+function nextNo(date,crew){const base=date.slice(2).replace(/-/g,"")+"-"+crew+"-";let n=1;while(S.tickets.some(t=>t.no===base+pad(n)))n++;return base+pad(n)}
+function newTicket(){
+  const st=S.settings, d=today();
+  const t={id:uid(),no:nextNo(d,st.crew),crew:Number(st.crew)||1,lead:st.lead,helper:st.helper,date:d,emergency:false,
+    customer:{name:"",street:"",city:"",zip:"",phone:"",email:""},lines:[],tm:{lead:0,helper:0,mtl:0,mtlDesc:"",permit:0},
+    dispatch:false,standAlone:"auto",arrive:"",depart:"",notes:"",check:{done:false,clean:false,photos:false,explained:false},sig:"",photos:[],
+    status:"open",createdAt:Date.now(),updatedAt:Date.now()};
+  S.tickets.push(t);save();return t;
+}
+const T = id => S.tickets.find(t=>t.id===id);
+
+/* ---------- week pay (same math as the Weekly Piece Pay Record) ---------- */
+function weekKey(mon,crew){return mon+"|"+crew}
+function weekRec(mon,crew){const k=weekKey(mon,crew);if(!S.weeks[k]){const days={};DAYS.forEach((d,i)=>{const ds=addDays(mon,i);const hol=holidayName(ds)?RULES.holHrs:0;days[d]={lh:0,hh:0,lhol:hol,hhol:hol,lvac:0}});S.weeks[k]={mon,crew:Number(crew),lead:"",helper:"",days,updatedAt:0}}return S.weeks[k]}
+function weekTickets(mon,crew){return S.tickets.filter(t=>mondayOf(t.date)===mon&&(crew==null||Number(t.crew)===Number(crew))).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:(a.no<b.no?-1:1))}
+function weekPay(mon,crew){
+  const w=weekRec(mon,crew), ts=weekTickets(mon,crew).filter(t=>t.status!=="open");
+  const o={lead:{piece:0,paid:0},helper:{piece:0,paid:0},customer:0};
+  ts.forEach(t=>{const c=calc(t);o.lead.piece+=c.leadPay;o.helper.piece+=c.helperPay;o.lead.paid+=c.leadHrs;o.helper.paid+=c.helperHrs;o.customer+=c.total});
+  const sum=f=>DAYS.reduce((a,d)=>a+(Number(w.days[d][f])||0),0);
+  const fin=(p,hw,holH,vacH,pto)=>{p.hw=hw;p.floor=RULES.minWage*hw;p.makeup=Math.max(0,p.floor-p.piece);p.rr=hw?(p.piece+p.makeup)/hw:0;p.ot=Math.max(0,hw-RULES.otAfter);p.otp=RULES.otFactor*p.rr*p.ot;p.holH=holH;p.holPay=holH*pto;p.vacH=vacH;p.vacPay=vacH*pto;p.gross=p.piece+p.makeup+p.otp+p.holPay+p.vacPay;return p};
+  fin(o.lead,sum("lh"),sum("lhol"),sum("lvac"),Number(S.settings.ptoLead)||RULES.ptoLead);
+  fin(o.helper,sum("hh"),sum("hhol"),0,Number(S.settings.ptoHelper)||RULES.ptoHelper);
+  o.tickets=ts.length;o.open=weekTickets(mon,crew).filter(t=>t.status==="open").length;
+  return o;
+}
+
+/* ---------- exports ---------- */
+function csvCell(v){v=v==null?"":String(v);return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+function toCSV(rows){return rows.map(r=>r.map(csvCell).join(",")).join("\r\n")+"\r\n"}
+function toTSV(rows){return rows.map(r=>r.map(v=>String(v==null?"":v).replace(/[\t\r\n]+/g," ")).join("\t")).join("\n")}
+function payrollRows(mon){
+  const rows=[["Week start","Crew sheet","Record","Day","Day type","Customer name / address","SKU #","Crew","Qty","Lead hrs worked","Helper hrs worked","Lead holiday hrs","Helper holiday hrs","Lead vacation hrs","Ticket # / note","Lead name","Helper name"]];
+  const crews=[...new Set([...weekTickets(mon,null).filter(t=>t.status!=="open").map(t=>Number(t.crew)),...Object.values(S.weeks).filter(w=>w.mon===mon&&w.updatedAt).map(w=>Number(w.crew))])].sort();
+  crews.forEach(c=>{
+    const ts=weekTickets(mon,c).filter(t=>t.status!=="open"), w=weekRec(mon,c);
+    const lead=w.lead||(ts[0]&&ts[0].lead)||"", helper=w.helper||(ts.find(t=>t.helper)||{}).helper||"";
+    rows.push([mon,c,"NAMES","","","","","","","","","","","","",lead,helper]);
+    ts.forEach(t=>{
+      const dt=dayType(t.date,t.emergency), cust=custLabel(t), hh=!!(t.helper||"").trim();
+      t.lines.forEach(l=>{if(BYSKU[l.sku]&&Number(l.qty)>0)rows.push([mon,c,"TICKET LINE",dayName(t.date),dt,cust,l.sku,hh?(l.crew||"Both"):"Lead",Number(l.qty),"","","","","",t.no,"",""])});
+      if(q4(t.tm.lead)>0)rows.push([mon,c,"TICKET LINE",dayName(t.date),dt,cust,"FEE-005","Lead",q4(t.tm.lead),"","","","","",t.no+" T&M","",""]);
+      if(hh&&q4(t.tm.helper)>0)rows.push([mon,c,"TICKET LINE",dayName(t.date),dt,cust,"FEE-005","Helper",q4(t.tm.helper),"","","","","",t.no+" T&M","",""]);
+    });
+    DAYS.forEach(d=>{const x=w.days[d];rows.push([mon,c,"HOURS",d,"","","","","",Number(x.lh)||0,Number(x.hh)||0,Number(x.lhol)||0,Number(x.hhol)||0,Number(x.lvac)||0,x.note||"","",""])});
+  });
+  return rows;
+}
+function qboRows(ts){
+  const rows=[["InvoiceNo","Customer","InvoiceDate","DueDate","Terms","Memo","Item(Product/Service)","ItemDescription","ItemQuantity","ItemRate","ItemAmount","Taxable","ServiceDate"]];
+  ts.forEach(t=>{const c=calc(t);const memo=["Ticket "+t.no,custLabel(t),"Crew "+t.crew+": "+[t.lead,t.helper].filter(Boolean).join(" / "),c.dt!=="Mon-Thu"?c.dt+" rate":""].filter(Boolean).join(" | ");
+    c.inv.forEach(x=>rows.push([t.no,(t.customer.name||"").trim(),mdy(t.date),mdy(t.date),S.settings.terms||"Due on receipt",memo,x.item,x.desc,x.qty,x.rate,x.amt.toFixed(2),"N",mdy(t.date)]))});
+  return rows;
+}
+function customerRows(ts){
+  const rows=[["Name","Email","Phone","Street","City","State","ZIP"]], seen=new Set();
+  ts.forEach(t=>{const c=t.customer, n=(c.name||"").trim();if(!n||seen.has(n.toLowerCase()))return;seen.add(n.toLowerCase());rows.push([n,c.email||"",c.phone||"",c.street||"",c.city||"","LA",c.zip||""])});
+  return rows;
+}
+async function bundle(ts,weeks,withPhotos){
+  const out={app:"saucier-field",ver:APP_VER,exportedAt:new Date().toISOString(),from:S.settings.lead||"",crew:Number(S.settings.crew),tickets:ts,weeks,photos:{}};
+  if(withPhotos)for(const t of ts)for(const p of (t.photos||[])){const d=await pGet(p);if(d)out.photos[p]=d}
+  return out;
+}
+async function importBundle(obj){
+  if(!obj||obj.app!=="saucier-field")throw new Error("This is not a Saucier field file.");
+  let added=0,updated=0,skipped=0;
+  (obj.tickets||[]).forEach(t=>{const cur=S.tickets.find(x=>x.id===t.id);if(!cur){S.tickets.push(Object.assign({},t,{status:t.status==="open"?"open":"sent"}));added++}else if((t.updatedAt||0)>(cur.updatedAt||0)){Object.assign(cur,t,{status:cur.status==="invoiced"?"invoiced":(t.status==="open"?"open":"sent")});updated++}else skipped++});
+  Object.values(obj.weeks||{}).forEach(w=>{const k=weekKey(w.mon,w.crew);const cur=S.weeks[k];if(!cur||(w.updatedAt||0)>=(cur.updatedAt||0))S.weeks[k]=w});
+  for(const [k,v] of Object.entries(obj.photos||{}))await pPut(k,v);
+  save();return {added,updated,skipped};
+}
+
+/* ---------- output helpers (work on hosted pages; in previews, Copy always works) ---------- */
+function download(name,text,type){try{const b=new Blob([text],{type:type||"text/plain"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);toast("Saving "+name)}catch(e){toast("This browser blocked the download. Use Copy instead.")}}
+async function copy(text,btn){try{await navigator.clipboard.writeText(text);toast("Copied")}catch(e){const ta=btn&&btn.closest(".card")&&btn.closest(".card").querySelector("textarea.copysrc");if(ta){ta.hidden=false;ta.value=text;ta.select();toast("Select all and copy the text in the box")}else toast("Copy was blocked")}}
+async function share(name,text){try{const f=new File([text],name,{type:"application/json"});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:name,text:"Saucier field tickets "+name});return true}}catch(e){if(e&&e.name==="AbortError")return false}download(name,text,"application/json");return true}
+let toastT;function toast(m){const h=document.getElementById("toastHost");h.innerHTML='<div class="toast" role="status">'+esc(m)+"</div>";clearTimeout(toastT);toastT=setTimeout(()=>h.innerHTML="",2600)}
+
+/* ---------- view state ---------- */
+const V={tab:"tickets",ticket:null,pickFor:null,cat:"All",q:"",pbDay:"Mon-Thu",open:null,week:mondayOf(today()),oweek:mondayOf(today()),sendOut:null,confirmDel:false,custCopy:false};
+function go(tab){V.tab=tab;V.confirmDel=false;V.custCopy=false;if(tab!=="ticket")V.ticket=null;render();window.scrollTo(0,0)}
+
+function render(){
+  const st=S.settings;
+  document.getElementById("hdrCrew").textContent=st.office?"Office":(st.lead?"Crew "+st.crew+" · "+st.lead.split(" ")[0]:"");
+  const tabs=st.office?[["pricebook","Price book"],["tickets","Tickets"],["office","Office"]]:[["pricebook","Price book"],["tickets","Tickets"],["week","My week"]];
+  const cur=V.tab==="ticket"?"tickets":V.tab;
+  document.getElementById("tabs").innerHTML=tabs.map(([k,l])=>`<button data-act="go" data-v="${k}" ${cur===k?'aria-current="page"':""}>${l}</button>`).join("");
+  const m=document.getElementById("main");
+  if(!st.lead&&!st.office&&V.tab!=="settings"){m.innerHTML=viewSetup();return}
+  m.innerHTML=({pricebook:viewPB,tickets:viewTickets,ticket:viewTicket,week:viewWeek,office:viewOffice,settings:viewSettings})[V.tab]();
+  if(V.tab==="ticket")afterTicket();
+}
+
+/* ---------- setup ---------- */
+function viewSetup(){const st=S.settings;return `
+<div class="card"><h2>Set up this phone</h2><p class="muted">One phone per Lead Plumber. The Lead records every ticket for the crew, including the Helper's hours.</p>
+<label class="f">Your name (Lead Plumber)<input id="su_lead" value="${esc(st.lead)}" autocomplete="name"></label>
+<label class="f">Your usual Helper (leave blank if you work alone)<input id="su_helper" value="${esc(st.helper)}"></label>
+<label class="f">Crew sheet number (the office tells you: 1, 2 or 3)<select id="su_crew">${[1,2,3].map(n=>`<option ${Number(st.crew)===n?"selected":""}>${n}</option>`).join("")}</select></label>
+<button class="btn primary" data-act="setup">Start</button>
+<button class="btn" data-act="officeOn">This is the office computer</button></div>`}
+
+/* ---------- price book ---------- */
+function viewPB(){
+  const cats=["All",...new Set(ITEMS.map(i=>i.cat))];
+  const q=V.q.trim().toLowerCase();
+  const list=ITEMS.filter(i=>(V.cat==="All"||i.cat===V.cat)&&(!q||(i.sku+" "+i.name+" "+i.desc).toLowerCase().includes(q)));
+  const t=V.pickFor&&T(V.pickFor);
+  return `${t?`<div class="pickbar"><div class="grow small"><b>Adding to ticket ${esc(t.no)}</b><br>${t.lines.length} task${t.lines.length===1?"":"s"} on it · ${esc(dayType(t.date,t.emergency))} prices</div><button class="btn" data-act="pickDone">Done</button></div>`:""}
+<div class="card"><input id="pbq" type="search" placeholder="Search: water heater, WTR-004, disposal" value="${esc(V.q)}" aria-label="Search the price book">
+<div class="chips" role="group" aria-label="Category">${cats.map(c=>`<button class="chip" data-act="cat" data-v="${esc(c)}" aria-pressed="${V.cat===c}">${esc(c)}</button>`).join("")}</div>
+${t?"":`<div class="seg" role="group" aria-label="Show prices for">${[["Mon-Thu","Regular"],["Weekend","After-hours / weekend"],["Holiday","Holiday"]].map(([k,l])=>`<button data-act="pbday" data-v="${k}" aria-pressed="${V.pbDay===k}">${l}</button>`).join("")}</div>`}</div>
+<div class="card"><div class="small muted">${list.length} of ${ITEMS.length} tasks · prices at the ${t?esc(dayType(t.date,t.emergency)):({"Mon-Thu":"regular","Weekend":"after-hours","Holiday":"holiday"})[V.pbDay]} rate</div><div class="list">
+${list.map(i=>{const dt=t?dayType(t.date,t.emergency):V.pbDay;const opened=V.open===i.sku;const onT=t&&t.lines.find(l=>l.sku===i.sku);return `
+<button class="item" data-act="${t?"pick":"pbopen"}" data-v="${i.sku}"><div class="grow" style="min-width:0"><div class="t">${esc(i.name)}</div><div class="s">${i.sku} · ${hrs(i.hrs)} book hr${i.hrs===1?"":"s"}${onT?` · <b>on ticket ×${hrs(onT.qty)}</b>`:""}</div></div><div class="price num">${usd(priceFor(i,dt))}</div></button>
+${opened&&!t?`<div class="note info small"><div>${esc(i.desc||"")}</div><div class="kv num" style="margin-top:6px"><span>Regular price</span><b>${usd(i.list)}</b><span>Only task on the call (stand-alone)</span><b>${usd(i.sa)}</b><span>After-hours / weekend</span><b>${usd(i.ah)}</b><span>Holiday</span><b>${usd(i.hol)}</b>${S.settings.showPay?`<span>Pays Lead / Helper (regular day)</span><b>${usd(i.hrs*RULES.leadRate)} / ${usd(i.hrs*RULES.helperRate)}</b>`:""}${i.mtl?`<span>Material included (marked up)</span><b>${usd(i.mtl)}</b>`:""}</div></div>`:""}`}).join("")||'<p class="muted">Nothing matches. Try fewer words, or use T&M on the ticket if the task is not in the book.</p>'}
+</div></div>
+<div class="card small muted">Every job has a ${usd(RULES.minTicket)} minimum charge before any after-hours or holiday premium, permit or dispatch fee. A single task uses its stand-alone price instead, which already includes the minimum. Time and material labor (FEE-005) is ${usd(RULES.laborRate)} per hour per person, in 15-minute steps, and only on jobs the service manager approved as T&M. Add T&M hours on the ticket itself.</div>`;
+}
+
+/* ---------- tickets ---------- */
+function viewTickets(){
+  const mine=S.settings.office?S.tickets:S.tickets.filter(t=>Number(t.crew)===Number(S.settings.crew));
+  const sorted=[...mine].sort((a,b)=>b.date.localeCompare(a.date)||b.no.localeCompare(a.no));
+  const open=sorted.filter(t=>t.status==="open");
+  const groups={};sorted.forEach(t=>{(groups[t.date]=groups[t.date]||[]).push(t)});
+  return `${DEMO&&S.demo?`<div class="demo">These are <b>example tickets</b> so you can see how it works. Clear them in Settings before real use.</div>`:""}
+<button class="btn primary" data-act="newT" style="font-size:1.1rem">+ New ticket</button>
+${open.length?`<div class="note warn">${open.length} open ticket${open.length>1?"s":""}. Finish and mark complete before you send your week.</div>`:""}
+${Object.keys(groups).length?Object.entries(groups).slice(0,40).map(([d,ts])=>`<div class="card"><div class="row"><h3 class="grow">${fmtDate(d)}</h3>${dayPill(dayType(d,false),d)}</div><div class="list">${ts.map(ticketRow).join("")}</div></div>`).join(""):`<div class="card"><h3>No tickets yet</h3><p class="muted">Tap New ticket when you arrive at a job. Add the tasks from the price book, get the customer's signature, then mark it complete.</p></div>`}`;
+}
+function dayPill(dt,d){const h=d&&holidayName(d);return `<span class="pill ${dt==="Holiday"?"p-hol":dt==="Weekend"||dt==="Emergency"?"p-prem":"p-day"}">${esc(h||dt)}${RULES.mult[dt]>1?" ×"+RULES.mult[dt]:""}</span>`}
+function ticketRow(t){const c=calc(t);return `<button class="item" data-act="openT" data-v="${t.id}"><div class="grow" style="min-width:0"><div class="t">${esc(t.customer.name||"(no customer yet)")}</div><div class="s">${esc(t.no)} · ${t.lines.length} task${t.lines.length===1?"":"s"}${c.tmh?" · T&M "+hrs(c.tmh)+" hr":""}${S.settings.office?" · Crew "+t.crew:""}</div></div><div style="text-align:right"><div class="price num">${usd(c.total)}</div><span class="pill p-${t.status}">${t.status}</span></div></button>`}
+
+function viewTicket(){
+  const t=T(V.ticket); if(!t){V.tab="tickets";return viewTickets()}
+  const c=calc(t), lock=t.status!=="open", dis=lock?"disabled":"", dt=c.dt, hh=c.hasHelper;
+  const custs=Object.keys(S.customers||{}).sort();
+  const issues=ticketIssues(t);
+  return `<div class="row"><button class="btn small" data-act="go" data-v="tickets">‹ Tickets</button><span class="grow"></span><span class="pill p-${t.status}">${t.status}</span></div>
+<div class="card"><div class="row"><h2 class="grow">Ticket ${esc(t.no)}</h2>${dayPill(dt,t.date)}</div>
+<div class="grid2"><label class="f">Date<input type="date" id="t_date" value="${t.date}" ${dis}></label>
+<label class="f">Arrive / depart<div class="row" style="flex-wrap:nowrap"><input type="time" id="t_arrive" value="${esc(t.arrive)}" ${dis} aria-label="Arrive"><input type="time" id="t_depart" value="${esc(t.depart)}" ${dis} aria-label="Depart"></div></label></div>
+${["Mon-Thu","Emergency"].includes(dt)?`<label class="check"><input type="checkbox" id="t_emerg" ${t.emergency?"checked":""} ${dis}><span>Emergency call outside 6:30 a.m. to 5:30 p.m. (after-hours price, pays 1.5×)</span></label>`:""}
+${dt==="Friday"?`<div class="small muted">Friday calls are billed and paid at the regular rate.</div>`:dt==="Weekend"?`<div class="small muted">Weekend (not a holiday): after-hours prices, pays 1.5×.</div>`:dt==="Holiday"?`<div class="small muted">${esc(holidayName(t.date))}: holiday prices, pays 2×.</div>`:""}
+</div>
+<div class="card"><h3>Customer</h3>
+<label class="f">Name (as it should appear on the invoice)<input id="c_name" list="custlist" value="${esc(t.customer.name)}" ${dis} autocomplete="off"></label><datalist id="custlist">${custs.map(n=>`<option value="${esc(n)}">`).join("")}</datalist>
+<div class="grid3"><label class="f">Job address<input id="c_street" value="${esc(t.customer.street)}" ${dis}></label><label class="f">City<input id="c_city" value="${esc(t.customer.city)}" ${dis}></label><label class="f">ZIP<input id="c_zip" inputmode="numeric" value="${esc(t.customer.zip)}" ${dis}></label></div>
+<div class="grid2"><label class="f">Phone<input id="c_phone" type="tel" value="${esc(t.customer.phone)}" ${dis}></label><label class="f">Email<input id="c_email" type="email" value="${esc(t.customer.email)}" ${dis}></label></div></div>
+<div class="card"><h3>Crew</h3><div class="grid2"><label class="f">Lead Plumber<input id="t_lead" value="${esc(t.lead)}" ${dis}></label><label class="f">Helper (blank if none)<input id="t_helper" value="${esc(t.helper)}" ${dis}></label></div></div>
+<div class="card"><div class="row"><h3 class="grow">Price-book tasks</h3>${lock?"":`<button class="btn primary small" data-act="addTasks">+ Add tasks</button>`}</div>
+${t.lines.length?t.lines.map((l,i)=>{const it=BYSKU[l.sku];if(!it)return `<div class="note bad">Unknown SKU ${esc(l.sku)} <button class="btn small" data-act="rmLine" data-v="${i}">Remove</button></div>`;return `<div class="line"><div style="min-width:0"><div class="t" style="font-weight:600">${esc(it.name)}</div><div class="small muted">${it.sku} · ${hrs(it.hrs)} book hr · ${usd(priceFor(it,dt))} each</div>
+${hh?`<div class="seg" style="margin-top:6px;max-width:260px" role="group" aria-label="Who did this task">${["Both","Lead","Helper"].map(k=>`<button data-act="lcrew" data-i="${i}" data-v="${k}" aria-pressed="${(l.crew||"Both")===k}" ${dis}>${k}</button>`).join("")}</div>`:""}</div>
+<div style="text-align:right"><div class="stepper">${lock?"":`<button data-act="qty" data-i="${i}" data-v="-1" aria-label="Less">−</button>`}<input id="q_${i}" inputmode="decimal" value="${hrs(l.qty)}" ${dis} aria-label="Quantity">${lock?"":`<button data-act="qty" data-i="${i}" data-v="1" aria-label="More">+</button>`}</div>
+<div class="num" id="la_${i}" style="margin-top:4px;font-weight:700">${usd(priceFor(it,dt)*l.qty)}</div>${lock?"":`<button class="btn small" data-act="rmLine" data-v="${i}" style="margin-top:4px">Remove</button>`}</div></div>`}).join(""):`<p class="muted small">No tasks yet. Tap Add tasks to pick from the price book.</p>`}
+${t.lines.length===1&&!lock?`<label class="f">Only task on this call?<select id="t_sa"><option value="auto" ${t.standAlone==="auto"?"selected":""}>Decide for me (only one task, quantity 1)</option><option value="yes" ${t.standAlone==="yes"?"selected":""}>Yes, charge the stand-alone minimum</option><option value="no" ${t.standAlone==="no"?"selected":""}>No, other work was done (the $275 job minimum still applies)</option></select></label>`:""}
+</div>
+<details class="card" ${(c.tmh||t.tm.mtl||t.tm.permit)?"open":""}><summary>Time & material (approved T&M jobs only)</summary>
+<p class="small muted">Use only when the service manager approved T&M before work started. Hours per person, in 15-minute steps (0.25, 0.5, 0.75). Billed ${usd(RULES.laborRate)}/hr each.</p>
+<div class="grid2"><label class="f">Lead hours billed<input id="tm_lead" inputmode="decimal" value="${t.tm.lead||""}" ${dis} placeholder="0"></label><label class="f">Helper hours billed<input id="tm_helper" inputmode="decimal" value="${t.tm.helper||""}" ${dis||(!hh?"disabled":"")} placeholder="0"></label></div>
+<div class="grid2"><label class="f">Material cost ($, from receipt)<input id="tm_mtl" inputmode="decimal" value="${t.tm.mtl||""}" ${dis} placeholder="0.00"></label><label class="f">What material<input id="tm_mtlDesc" value="${esc(t.tm.mtlDesc)}" ${dis}></label></div>
+<label class="f">Permit fee ($, at cost)<input id="tm_permit" inputmode="decimal" value="${t.tm.permit||""}" ${dis} placeholder="0.00"></label>
+<label class="check"><input type="checkbox" id="t_disp" ${t.dispatch?"checked":""} ${dis}><span>Charge dispatch / service call fee (${usd(RULES.dispatch)}), only if the office told you to</span></label>
+</details>
+<div class="card"><h3>Notes and photos</h3><textarea id="t_notes" ${dis} placeholder="What you found, what you did, anything the office should know">${esc(t.notes)}</textarea>
+<div class="photos" id="photos"></div>${lock?"":`<label class="btn" style="text-align:center">Add photo<input type="file" accept="image/*" capture="environment" id="t_photo" hidden multiple></label>`}</div>
+<div class="card"><h3>Completion</h3>
+${[["done","Work is complete and tested"],["clean","Work area cleaned up"],["photos","Before / after photos taken"],["explained","Explained the work and price to the customer"]].map(([k,l])=>`<label class="check"><input type="checkbox" data-chk="${k}" ${t.check[k]?"checked":""} ${dis}><span>${l}</span></label>`).join("")}
+<div class="small muted">Customer signature: I approve the work and the price below.</div>
+${t.sig?`<img src="${t.sig}" alt="Customer signature" style="background:#fff;border-radius:8px;border:1px solid var(--line);max-height:140px">${lock?"":`<button class="btn small" data-act="sigClear">Sign again</button>`}`:(lock?`<div class="muted small">Not signed</div>`:`<canvas class="sig" id="sig" aria-label="Signature pad"></canvas><button class="btn small" data-act="sigSave">Save signature</button>`)}
+</div>
+<div class="card" id="totals">${totalsHTML(t)}</div>
+${issues.length&&!lock?`<div class="note warn small"><b>Before you mark complete:</b><br>${issues.map(esc).join("<br>")}</div>`:""}
+${V.custCopy?custCopyHTML(t):""}
+<div class="card">${lock?`${t.status==="complete"?`<button class="btn" data-act="reopen">Reopen to make changes</button>`:`<div class="small muted">Sent to the office ${t.sentAt?new Date(t.sentAt).toLocaleString():""}. ${S.settings.office?"":"Call the office to make changes."}</div>${S.settings.office?`<button class="btn" data-act="reopen">Reopen (office)</button>`:""}`}`:`<button class="btn primary" data-act="complete">Mark complete</button>`}
+<button class="btn" data-act="custCopy">${V.custCopy?"Hide":"Show"} customer copy</button>
+${V.confirmDel?`<div class="note bad">Delete ticket ${esc(t.no)}? This cannot be undone.<div class="row" style="margin-top:8px"><button class="btn danger" data-act="delYes">Delete</button><button class="btn" data-act="delNo">Keep it</button></div></div>`:(t.status==="open"||S.settings.office?`<button class="btn danger" data-act="del">Delete ticket</button>`:"")}</div>`;
+}
+function totalsHTML(t){const c=calc(t);return `<h3>Customer price</h3><div class="scroll"><table><tbody>${c.inv.map(x=>`<tr><td>${esc(x.desc)}<div class="small muted">${esc(x.code)}${x.qty!==1?" · "+hrs(x.qty)+" × "+usd(x.rate):""}</div></td><td class="r num">${usd(x.amt)}</td></tr>`).join("")||`<tr><td class="muted">Nothing yet</td><td></td></tr>`}</tbody></table></div>
+<div class="row"><span class="grow">Total ${c.dt!=="Mon-Thu"&&c.dt!=="Friday"?"("+c.dt.toLowerCase()+" rate)":""}</span><span class="total num">${usd(c.total)}</span></div>
+${S.settings.showPay?`<div class="note info small"><b>Piece pay on this ticket</b> (${hrs(c.leadHrs)} book/T&M hrs${c.m>1?" × "+c.m:""}): Lead ${usd(c.leadPay)}${c.hasHelper?` · Helper ${usd(c.helperPay)}`:""}</div>`:""}`}
+function custCopyHTML(t){const c=calc(t);const txt=["Saucier Plumbing - Holden, LA","Ticket "+t.no+"  "+mdy(t.date),custLabel(t),"",...c.inv.map(x=>x.desc+(x.qty!==1?" ("+hrs(x.qty)+" x "+usd(x.rate)+")":"")+": "+usd(x.amt)),"","TOTAL: "+usd(c.total),"Technician: "+[t.lead,t.helper].filter(Boolean).join(" / "),"Your invoice will follow from our office."].join("\n");
+return `<div class="card"><h3>Customer copy</h3><pre class="out">${esc(txt)}</pre><textarea class="copysrc" hidden aria-label="Text to copy"></textarea><button class="btn" data-act="copyTxt" data-v="${esc(encodeURIComponent(txt))}">Copy to text or email the customer</button></div>`}
+
+async function afterTicket(){
+  const t=T(V.ticket);if(!t)return;
+  const ph=document.getElementById("photos");
+  if(ph){const parts=[];for(const id of t.photos||[]){const d=await pGet(id);if(d)parts.push(`<figure><img src="${d}" alt="Job photo">${t.status==="open"?`<button data-act="rmPhoto" data-v="${id}" aria-label="Remove photo">✕</button>`:""}</figure>`)}ph.innerHTML=parts.join("")||((t.photos||[]).length?`<span class="small muted">${t.photos.length} photo(s) on another device</span>`:"")}
+  const cv=document.getElementById("sig");if(cv)sigPad(cv);
+}
+let sigCtx=null,sigDirty=false;
+function sigPad(cv){const r=cv.getBoundingClientRect(),dpr=window.devicePixelRatio||1;cv.width=r.width*dpr;cv.height=r.height*dpr;const x=cv.getContext("2d");x.scale(dpr,dpr);x.lineWidth=2.4;x.lineCap="round";x.strokeStyle="#111";sigCtx=x;sigDirty=false;let down=false;
+  const pt=e=>{const b=cv.getBoundingClientRect();return [e.clientX-b.left,e.clientY-b.top]};
+  cv.onpointerdown=e=>{down=true;cv.setPointerCapture(e.pointerId);const [a,b]=pt(e);x.beginPath();x.moveTo(a,b)};
+  cv.onpointermove=e=>{if(!down)return;const [a,b]=pt(e);x.lineTo(a,b);x.stroke();sigDirty=true};
+  cv.onpointerup=()=>{down=false}}
+function sigData(cv){const o=document.createElement("canvas");o.width=360;o.height=120;const x=o.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,360,120);x.drawImage(cv,0,0,360,120);return o.toDataURL("image/png")}
+function shrink(file){return new Promise(res=>{const fr=new FileReader();fr.onload=()=>{const img=new Image();img.onload=()=>{const k=Math.min(1,1100/Math.max(img.width,img.height));const c=document.createElement("canvas");c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext("2d").drawImage(img,0,0,c.width,c.height);res(c.toDataURL("image/jpeg",.6))};img.onerror=()=>res(null);img.src=fr.result};fr.readAsDataURL(file)})}
+
+/* ---------- my week ---------- */
+function viewWeek(){
+  const st=S.settings, mon=V.week, crew=st.crew, w=weekRec(mon,crew);
+  const ts=weekTickets(mon,crew);
+  return `<div class="row"><button class="btn small" data-act="wk" data-v="-7" aria-label="Previous week">‹</button><div class="grow" style="text-align:center"><h2>Week of ${fmtDate(mon)}</h2><div class="small muted">Mon ${mdy(mon)} to Sun ${mdy(addDays(mon,6))} · payday Wed ${mdy(addDays(mon,9))}</div></div><button class="btn small" data-act="wk" data-v="7" aria-label="Next week">›</button></div>
+<div class="card"><h3>Hours worked</h3><p class="small muted">Every hour on the clock, on site and off (driving, supply house, shop). Holiday and vacation hours are paid time off, not hours worked. Helpers do not earn paid vacation.</p>
+<div class="scroll"><table><thead><tr><th>Day</th><th class="r">Lead</th><th class="r">Helper</th><th class="r">Lead holiday</th><th class="r">Helper holiday</th><th class="r">Lead vacation</th></tr></thead><tbody>
+${DAYS.map((d,i)=>{const x=w.days[d],ds=addDays(mon,i),h=holidayName(ds);return `<tr><td>${d.slice(0,3)} ${parse(ds).getMonth()+1}/${parse(ds).getDate()}${h?`<div class="small" style="color:var(--bad)">${esc(h)}</div>`:""}</td>${["lh","hh","lhol","hhol","lvac"].map(f=>`<td class="r"><input data-wk="${d}|${f}" inputmode="decimal" value="${Number(x[f])||""}" placeholder="0" style="width:64px;text-align:right;padding:8px 6px" aria-label="${d} ${f}"></td>`).join("")}</tr>`}).join("")}
+<tr><th>Week</th>${["lh","hh","lhol","hhol","lvac"].map(f=>`<th class="r num" id="ws_${f}">${hrs(DAYS.reduce((a,d)=>a+(Number(w.days[d][f])||0),0))}</th>`).join("")}</tr></tbody></table></div></div>
+<div id="wkSum">${weekSumHTML(mon,crew)}</div>
+<div class="card"><h3>Send to the office</h3><p class="small muted">Do this at the end of each day or by Monday morning for last week. It sends the completed tickets and your hours for this week. Sending again is fine: the office keeps the newest copy.</p>
+<button class="btn primary" data-act="sendWeek">Send week to office</button>
+${V.sendOut?`<div class="note ok small">File ready: <b>${esc(V.sendOut.name)}</b>. Attach it to an email or text to ${esc(st.officeEmail||"the office")}. If your phone did not offer to share it, use Copy and paste the text into an email.</div><textarea class="copysrc" hidden aria-label="Text to copy"></textarea><div class="row"><button class="btn" data-act="sendShare">Share file again</button><button class="btn" data-act="sendCopy">Copy as text</button></div>`:""}
+</div>
+<div class="card"><h3>Tickets this week</h3><div class="list">${ts.map(ticketRow).join("")||'<p class="muted small">None yet.</p>'}</div></div>`;
+}
+
+function weekSumHTML(mon,crew){const st=S.settings,p=weekPay(mon,crew);return `<div class="card"><h3>This week's work</h3>
+<div class="kv num"><span>Tickets complete / open</span><b>${p.tickets} / ${p.open}</b><span>Lead book + T&M hours (standard ${RULES.stdBook})</span><b>${hrs(p.lead.paid)}</b><span>Helper book + T&M hours</span><b>${hrs(p.helper.paid)}</b><span>Customer price of completed tickets</span><b>${usd(p.customer)}</b></div>
+${p.open?`<div class="note warn small">${p.open} open ticket${p.open>1?"s":""} this week. Open tickets are not sent or paid until marked complete.</div>`:""}</div>
+${st.showPay?`<div class="card"><h3>Pay estimate</h3><div class="scroll"><table><thead><tr><th></th><th class="r">Lead</th><th class="r">Helper</th></tr></thead><tbody>
+${[["Piece + T&M pay","piece"],["Minimum-wage make-up","makeup"],["Overtime premium ("+"over "+RULES.otAfter+" hrs)","otp"],["Holiday pay","holPay"],["Vacation pay","vacPay"]].map(([l,k])=>`<tr><td>${l}</td><td class="r num">${usd(p.lead[k])}</td><td class="r num">${usd(p.helper[k])}</td></tr>`).join("")}
+<tr><th>Gross estimate</th><th class="r num">${usd(p.lead.gross)}</th><th class="r num">${usd(p.helper.gross)}</th></tr></tbody></table></div>
+<div class="small muted">Estimate only. The office checks every ticket and figures final pay on the Weekly Piece Pay Record. Holiday and vacation use the PTO rate in Settings.</div></div>`:""}
+`}
+/* ---------- office ---------- */
+function viewOffice(){
+  const mon=V.oweek, ts=weekTickets(mon,null), done=ts.filter(t=>t.status!=="open");
+  const crews=[...new Set([...ts.map(t=>Number(t.crew)),...Object.values(S.weeks).filter(w=>w.mon===mon&&w.updatedAt).map(w=>Number(w.crew))])].sort();
+  const flagged=done.map(t=>[t,ticketIssues(t)]).filter(x=>x[1].length);
+  const toInv=done.filter(t=>t.status!=="invoiced");
+  const pr=payrollRows(mon);
+  const priceBookTotal=done.reduce((a,t)=>a+calc(t).inv.filter(x=>BYSKU[x.code]||["FEE-002","FEE-003","FEE-005"].includes(x.code)).reduce((s,x)=>s+x.amt,0),0);
+  const st=S.settings;
+  return `<div class="row"><button class="btn small" data-act="owk" data-v="-7" aria-label="Previous week">‹</button><div class="grow" style="text-align:center"><h2>Office · week of ${fmtDate(mon)}</h2><div class="small muted">${mdy(mon)} to ${mdy(addDays(mon,6))} · payday Wed ${mdy(addDays(mon,9))}</div></div><button class="btn small" data-act="owk" data-v="7" aria-label="Next week">›</button></div>
+<div class="card"><h3>1. Bring in the crews' files</h3><p class="small muted">Open the files the Leads emailed or texted (you can pick several at once), or paste the text of one.</p>
+<label class="btn dark" style="text-align:center">Open field files<input type="file" id="o_files" accept=".json,application/json,text/plain" multiple hidden></label>
+<textarea id="o_paste" placeholder="Or paste a field file's text here"></textarea><button class="btn" data-act="oPaste">Import pasted text</button></div>
+<div class="card"><h3>2. Review</h3>
+<div class="scroll"><table><thead><tr><th>Crew</th><th>Lead / Helper</th><th class="r">Tickets</th><th class="r">Open</th><th class="r">Lead hrs worked</th><th class="r">Book + T&M (L / H)</th><th class="r">Customer $</th></tr></thead><tbody>
+${crews.map(c=>{const p=weekPay(mon,c),w=weekRec(mon,c),t0=ts.find(t=>Number(t.crew)===c)||{};return `<tr><td>${c}</td><td>${esc(w.lead||t0.lead||"")} / ${esc(w.helper||t0.helper||"")}</td><td class="r num">${p.tickets}</td><td class="r num">${p.open}</td><td class="r num">${w.updatedAt?hrs(p.lead.hw):'<span style="color:var(--bad)">none sent</span>'}</td><td class="r num">${hrs(p.lead.paid)} / ${hrs(p.helper.paid)}</td><td class="r num">${usd(p.customer)}</td></tr>`}).join("")||`<tr><td colspan="7" class="muted">Nothing for this week yet.</td></tr>`}
+</tbody></table></div>
+${flagged.length?`<div class="note warn small"><b>${flagged.length} ticket${flagged.length>1?"s":""} to check</b>${flagged.map(([t,is])=>`<div style="margin-top:6px"><button class="btn small" data-act="openT" data-v="${t.id}">${esc(t.no)}</button> ${esc(t.customer.name||"")}: ${is.map(esc).join("; ")}</div>`).join("")}</div>`:done.length?`<div class="note ok small">Every completed ticket passed the checks.</div>`:""}
+<div class="list">${ts.map(ticketRow).join("")}</div></div>
+<div class="card"><h3>3. Payroll: Weekly Piece Pay Record</h3>
+<p class="small">Click <b>Copy payroll lines</b>, open <i>Saucier Weekly Piece Pay Record - Field Import.xlsx</i>, click cell <b>A1</b> on the <b>IMPORT</b> tab and paste. The crew sheets and PAYROLL SUMMARY fill in. Clear any Check that is not OK, fill in Reviewed by, then email the file to accounting.</p>
+<div class="small muted">${pr.length-1} rows · ${crews.length} crew sheet${crews.length===1?"":"s"} · price-book and T&M check total ${usd(priceBookTotal)} (compare to PAYROLL SUMMARY F16)</div>
+<textarea class="copysrc" hidden aria-label="Text to copy"></textarea>
+<div class="row"><button class="btn primary" data-act="cpPay">Copy payroll lines</button><button class="btn" data-act="dlPay">Download as CSV</button></div></div>
+<div class="card"><h3>4. Invoices: QuickBooks Online</h3>
+<p class="small">Download the invoice file and import it in QuickBooks: Settings (gear) › Import data › Invoices. Each ticket becomes one invoice; its number is the ticket number. New customers can be added first with the customer file (Import data › Customers).</p>
+<div class="small muted">${toInv.length} completed ticket${toInv.length===1?"":"s"} not yet invoiced · ${usd(toInv.reduce((a,t)=>a+calc(t).total,0))}</div>
+<textarea class="copysrc" hidden aria-label="Text to copy"></textarea>
+<div class="row"><button class="btn primary" data-act="dlQbo" ${toInv.length?"":"disabled"}>Download invoice file</button><button class="btn" data-act="dlCust" ${toInv.length?"":"disabled"}>Download customer file</button><button class="btn" data-act="cpQbo" ${toInv.length?"":"disabled"}>Copy invoice file</button></div>
+${V.confirmInv?`<div class="note warn small">Mark ${toInv.length} ticket${toInv.length===1?"":"s"} as invoiced? Do this after QuickBooks accepted the import.<div class="row" style="margin-top:8px"><button class="btn primary" data-act="invYes">Mark invoiced</button><button class="btn" data-act="invNo">Not yet</button></div></div>`:`<button class="btn" data-act="invAsk" ${toInv.length?"":"disabled"}>Mark these as invoiced</button>`}</div>
+<div class="card"><h3>5. Email accounting</h3>
+<p class="small">After review, email the saved Weekly Piece Pay Record to accounting for ADP entry. Attach the workbook yourself.</p>
+<label class="f">Accounting email<input id="o_acct" type="email" value="${esc(st.acctEmail)}" placeholder="payroll@example.com"></label>
+<textarea class="copysrc" hidden aria-label="Text to copy"></textarea>
+<div class="row"><a class="btn dark" href="${mailHref(mon)}">Open email</a><button class="btn" data-act="cpMail">Copy email text</button></div></div>`;
+}
+function mailText(mon){const crews=[...new Set(weekTickets(mon,null).filter(t=>t.status!=="open").map(t=>Number(t.crew)))].sort();
+  const lines=crews.flatMap(c=>{const p=weekPay(mon,c),w=weekRec(mon,c),t0=weekTickets(mon,c)[0]||{};return [["Crew "+c+" Lead "+(w.lead||t0.lead||""),p.lead],["Crew "+c+" Helper "+(w.helper||t0.helper||""),p.helper]].filter(x=>x[1].hw||x[1].piece||x[1].holH).map(([n,x])=>`${n}: ${hrs(x.hw)} hrs worked, est. gross ${usd(x.gross)}`)});
+  return {subj:"Piece pay - week of "+mdy(mon)+" (payday "+mdy(addDays(mon,9))+")",body:["Attached is the reviewed Weekly Piece Pay Record for the week of "+mdy(mon)+" to "+mdy(addDays(mon,6))+".","Please enter it in ADP from the PAYROLL SUMMARY tab.","","Field tool estimates (the workbook is final):",...lines,"","Thanks"].join("\n")}}
+function mailHref(mon){const m=mailText(mon);return "mailto:"+encodeURIComponent(S.settings.acctEmail||"")+"?subject="+encodeURIComponent(m.subj)+"&body="+encodeURIComponent(m.body)}
+
+/* ---------- settings ---------- */
+function viewSettings(){const st=S.settings;let used=0;try{used=(localStorage.getItem(KEY)||"").length}catch(e){}
+return `<div class="card"><h2>Settings</h2>
+<label class="f">Lead Plumber on this phone<input id="s_lead" value="${esc(st.lead)}"></label>
+<label class="f">Usual Helper<input id="s_helper" value="${esc(st.helper)}"></label>
+<label class="f">Crew sheet number<select id="s_crew">${[1,2,3].map(n=>`<option ${Number(st.crew)===n?"selected":""}>${n}</option>`).join("")}</select></label>
+<label class="f">Office email (where you send your week)<input id="s_office" type="email" value="${esc(st.officeEmail)}"></label>
+<div class="grid2"><label class="f">Lead PTO rate ($/hr)<input id="s_ptoLead" inputmode="decimal" value="${st.ptoLead}"></label><label class="f">Helper PTO rate ($/hr)<input id="s_ptoHelper" inputmode="decimal" value="${st.ptoHelper}"></label></div>
+<label class="check"><input type="checkbox" id="s_showPay" ${st.showPay?"checked":""}><span>Show piece pay on tickets and the week</span></label>
+<label class="check"><input type="checkbox" id="s_office_mode" ${st.office?"checked":""}><span>Office mode (adds the Office tab for importing crew files, payroll and QuickBooks)</span></label>
+<button class="btn primary" data-act="saveSettings">Save settings</button></div>
+<div class="card"><h3>Price book</h3><div class="small muted">${ITEMS.length} tasks · ${S.prices?"updated "+esc(S.prices.updated):"2026 price book (built in)"} · labor ${usd(RULES.laborRate)}/hr · Lead ${usd(RULES.leadRate)} / Helper ${usd(RULES.helperRate)} per book hour</div>
+<details><summary>Update prices</summary><p class="small">In the Weekly Piece Pay Record, PRICE LIST tab, select A2:H141 (SKU # through Holiday price), copy, and paste here. Then send everyone the new prices file, or post it with the app.</p>
+<textarea id="s_prices" placeholder="Paste price rows here"></textarea><textarea class="copysrc" hidden aria-label="Text to copy"></textarea><div class="row"><button class="btn" data-act="pricesLoad">Use these prices</button><button class="btn" data-act="pricesFile">Download prices file</button>${S.prices?`<button class="btn" data-act="pricesReset">Back to built-in prices</button>`:""}</div></details></div>
+<div class="card"><h3>Data on this device</h3><div class="small muted">${S.tickets.length} tickets · about ${Math.round(used/1024)} KB of roughly 5,000 KB used. Photos are stored separately.</div>
+<button class="btn" data-act="purge">Remove sent tickets older than 60 days</button>
+${DEMO&&S.demo?`<button class="btn danger" data-act="clearDemo">Clear example tickets</button>`:""}
+<div class="small muted">Version ${APP_VER}. Saucier Plumbing, Holden LA.</div></div>`}
+
+/* ---------- events ---------- */
+document.addEventListener("click",async e=>{
+  const b=e.target.closest("[data-act]");if(!b)return;const a=b.dataset.act,v=b.dataset.v;const t=V.ticket&&T(V.ticket);
+  const touch=()=>{if(t){t.updatedAt=Date.now();save()}};
+  switch(a){
+  case "go":go(v);break;
+  case "setup":S.settings.lead=val("su_lead").trim();S.settings.helper=val("su_helper").trim();S.settings.crew=Number(val("su_crew"));if(!S.settings.lead){toast("Enter your name");return}save();go("tickets");break;
+  case "officeOn":S.settings.office=true;save();go("office");break;
+  case "cat":V.cat=v;render();break;
+  case "pbday":V.pbDay=v;render();break;
+  case "pbopen":V.open=V.open===v?null:v;render();break;
+  case "pick":{const tk=T(V.pickFor);const l=tk.lines.find(l=>l.sku===v);if(l)l.qty=Number(l.qty)+1;else tk.lines.push({sku:v,qty:1,crew:"Both"});tk.updatedAt=Date.now();save();toast("Added "+BYSKU[v].name);render();break}
+  case "pickDone":V.ticket=V.pickFor;V.pickFor=null;V.q="";V.tab="ticket";render();window.scrollTo(0,0);break;
+  case "newT":{const tk=newTicket();V.ticket=tk.id;V.tab="ticket";render();window.scrollTo(0,0);break}
+  case "openT":V.ticket=v;V.tab="ticket";V.confirmDel=false;V.custCopy=false;render();window.scrollTo(0,0);break;
+  case "addTasks":V.pickFor=t.id;V.tab="pricebook";V.q="";V.cat="All";render();window.scrollTo(0,0);break;
+  case "qty":{const l=t.lines[b.dataset.i];l.qty=Math.max(.25,q4(Number(l.qty)+Number(v)));touch();render();break}
+  case "rmLine":t.lines.splice(Number(v),1);touch();render();break;
+  case "lcrew":t.lines[b.dataset.i].crew=v;touch();render();break;
+  case "sigSave":{const cv=document.getElementById("sig");if(!sigDirty){toast("Have the customer sign in the box first");return}t.sig=sigData(cv);touch();render();break}
+  case "sigClear":t.sig="";touch();render();break;
+  case "rmPhoto":t.photos=t.photos.filter(p=>p!==v);pDel(v);touch();render();break;
+  case "complete":{const is=ticketIssues(t).filter(x=>!/signature|checklist|T&M part/.test(x));if(is.length){toast(is[0]);return}t.status="complete";t.completedAt=Date.now();const n=(t.customer.name||"").trim();if(n){S.customers[n]={street:t.customer.street,city:t.customer.city,zip:t.customer.zip,phone:t.customer.phone,email:t.customer.email}}touch();toast("Ticket complete");render();break}
+  case "reopen":t.status="open";touch();render();break;
+  case "custCopy":V.custCopy=!V.custCopy;render();break;
+  case "copyTxt":copy(decodeURIComponent(v),b);break;
+  case "del":V.confirmDel=true;render();break;
+  case "delNo":V.confirmDel=false;render();break;
+  case "delYes":(t.photos||[]).forEach(pDel);S.tickets=S.tickets.filter(x=>x.id!==t.id);save();go("tickets");break;
+  case "wk":V.week=addDays(V.week,Number(v));V.sendOut=null;render();break;
+  case "owk":V.oweek=addDays(V.oweek,Number(v));V.confirmInv=false;render();break;
+  case "sendWeek":{const crew=S.settings.crew, mon=V.week;const ts=weekTickets(mon,crew).filter(t=>t.status!=="open");const w=weekRec(mon,crew);w.lead=S.settings.lead;w.helper=S.settings.helper;if(!w.updatedAt)w.updatedAt=Date.now();
+    const weeks={};weeks[weekKey(mon,crew)]=w;const obj=await bundle(ts,weeks,true);const name="Saucier-Crew"+crew+"-"+(S.settings.lead||"Lead").replace(/\W+/g,"")+"-week-"+mon+"-"+new Date().toTimeString().slice(0,5).replace(":","")+".json";
+    const text=JSON.stringify(obj);V.sendOut={name,text};ts.forEach(t=>{if(t.status==="complete"){t.status="sent";t.sentAt=Date.now()}});save();render();await share(name,text);break}
+  case "sendShare":if(V.sendOut)share(V.sendOut.name,V.sendOut.text);break;
+  case "sendCopy":if(V.sendOut)copy(V.sendOut.text,b);break;
+  case "oPaste":{try{const r=await importBundle(JSON.parse(val("o_paste")));toast(`Imported: ${r.added} new, ${r.updated} updated`);render()}catch(err){toast(err.message.includes("Saucier")?err.message:"That text is not a complete field file. Copy all of it and try again.")}break}
+  case "cpPay":copy(toTSV(payrollRows(V.oweek)),b);break;
+  case "dlPay":download("Payroll lines week "+V.oweek+".csv",toCSV(payrollRows(V.oweek)),"text/csv");break;
+  case "dlQbo":download("QBO invoices week "+V.oweek+".csv",toCSV(qboRows(officeToInv())),"text/csv");break;
+  case "cpQbo":copy(toCSV(qboRows(officeToInv())),b);break;
+  case "dlCust":download("QBO customers week "+V.oweek+".csv",toCSV(customerRows(officeToInv())),"text/csv");break;
+  case "invAsk":V.confirmInv=true;render();break;
+  case "invNo":V.confirmInv=false;render();break;
+  case "invYes":officeToInv().forEach(t=>{t.status="invoiced";t.invoicedAt=Date.now()});V.confirmInv=false;save();toast("Marked invoiced");render();break;
+  case "cpMail":{const m=mailText(V.oweek);copy("To: "+(S.settings.acctEmail||"")+"\nSubject: "+m.subj+"\n\n"+m.body,b);break}
+  case "saveSettings":{const st=S.settings;st.lead=val("s_lead").trim();st.helper=val("s_helper").trim();st.crew=Number(val("s_crew"));st.officeEmail=val("s_office").trim();st.ptoLead=Number(val("s_ptoLead"))||RULES.ptoLead;st.ptoHelper=Number(val("s_ptoHelper"))||RULES.ptoHelper;st.showPay=document.getElementById("s_showPay").checked;st.office=document.getElementById("s_office_mode").checked;save();toast("Saved");go(st.office?"office":"tickets");break}
+  case "pricesLoad":{const rows=val("s_prices").trim().split(/\r?\n/).map(r=>r.split("\t"));const items=[];for(const r of rows){if(r.length<8||!/^[A-Z]{3}-\d{3}$/.test(r[0].trim())||r[0].trim()==="FEE-005")continue;const n=x=>Number(String(x).replace(/[$,]/g,""));const it={sku:r[0].trim(),name:r[1].trim(),hrs:n(r[2]),cat:r[3].trim(),list:n(r[4]),sa:n(r[5]),ah:n(r[6]),hol:n(r[7]),desc:(BYSKU[r[0].trim()]||{}).desc||"",mtl:(BYSKU[r[0].trim()]||{}).mtl||0};if([it.hrs,it.list,it.sa,it.ah,it.hol].some(isNaN)){toast("Row "+it.sku+" has a number that could not be read");return}items.push(it)}
+    if(items.length<10){toast("Paste the PRICE LIST rows A2:H141 (8 columns).");return}S.prices={updated:today(),items};setPrices(items);save();toast(items.length+" prices loaded");render();break}
+  case "pricesFile":download("prices.json",JSON.stringify({updated:(S.prices||{}).updated||today(),items:ITEMS}),"application/json");break;
+  case "pricesReset":S.prices=null;setPrices(DATA.items);save();render();break;
+  case "purge":{const cut=Date.now()-60*864e5;const old=S.tickets.filter(t=>(t.status==="sent"||t.status==="invoiced")&&parse(t.date).getTime()<cut);old.forEach(t=>(t.photos||[]).forEach(pDel));S.tickets=S.tickets.filter(t=>!old.includes(t));save();toast(old.length+" removed");render();break}
+  case "clearDemo":S.tickets.filter(t=>t.demo).forEach(t=>(t.photos||[]).forEach(pDel));S.tickets=S.tickets.filter(t=>!t.demo);Object.keys(S.weeks).forEach(k=>{if(S.weeks[k].demo)delete S.weeks[k]});S.customers={};S.demo=false;save();toast("Examples cleared");render();break;
+  }
+});
+function officeToInv(){return weekTickets(V.oweek,null).filter(t=>t.status==="sent"||t.status==="complete")}
+const val=id=>{const el=document.getElementById(id);return el?el.value:""};
+
+document.addEventListener("input",e=>{
+  const el=e.target, t=V.ticket&&T(V.ticket);
+  if(el.id==="pbq"){V.q=el.value;const pos=el.selectionStart;render();const n=document.getElementById("pbq");n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}return}
+  if(el.dataset.wk){const [d,f]=el.dataset.wk.split("|");const w=weekRec(V.week,S.settings.crew);w.days[d][f]=q4(el.value);w.updatedAt=Date.now();save();return}
+  if(el.id==="o_acct"){S.settings.acctEmail=el.value.trim();save();return}
+  if(!t||t.status!=="open")return;
+  const map={c_name:["customer","name"],c_street:["customer","street"],c_city:["customer","city"],c_zip:["customer","zip"],c_phone:["customer","phone"],c_email:["customer","email"],tm_mtlDesc:["tm","mtlDesc"]};
+  if(map[el.id]){t[map[el.id][0]][map[el.id][1]]=el.value}
+  else if(["tm_lead","tm_helper","tm_mtl","tm_permit"].includes(el.id)){t.tm[el.id.slice(3)]=Number(el.value)||0}
+  else if(["t_lead","t_helper","t_notes","t_arrive","t_depart"].includes(el.id)){t[el.id.slice(2)]=el.value}
+  else if(/^q_\d+$/.test(el.id)){t.lines[Number(el.id.slice(2))].qty=Number(el.value)||0}
+  else return;
+  t.updatedAt=Date.now();save();const tt=document.getElementById("totals");if(tt)tt.innerHTML=totalsHTML(t);
+});
+document.addEventListener("change",async e=>{
+  const el=e.target, t=V.ticket&&T(V.ticket);
+  if(el.id==="o_files"){let a=0,u=0,bad=0;for(const f of el.files){try{const r=await importBundle(JSON.parse(await f.text()));a+=r.added;u+=r.updated}catch(_){bad++}}toast(`Imported ${a} new, ${u} updated${bad?`, ${bad} file(s) not readable`:""}`);render();return}
+  if(el.dataset.wk){el.value=q4(el.value)||"";const ws=document.getElementById("wkSum");if(ws)ws.innerHTML=weekSumHTML(V.week,S.settings.crew);const w=weekRec(V.week,S.settings.crew);["lh","hh","lhol","hhol","lvac"].forEach(f=>{const c=document.getElementById("ws_"+f);if(c)c.textContent=hrs(DAYS.reduce((a,d)=>a+(Number(w.days[d][f])||0),0))});return}
+  if(!t)return;
+  if(el.id==="c_name"&&t.status==="open"){const c=S.customers[el.value.trim()];if(c&&!t.customer.street){Object.assign(t.customer,c);t.updatedAt=Date.now();save();render()}return}
+  if(el.id==="t_photo"){for(const f of el.files){const d=await shrink(f);if(!d)continue;const id="ph_"+uid();if(await pPut(id,d)){t.photos.push(id)}else toast("Photos cannot be saved in this browser")}t.updatedAt=Date.now();save();render();return}
+  if(t.status!=="open")return;
+  if(el.id==="t_date"&&el.value){t.date=el.value;if(dayType(t.date,false)!=="Mon-Thu")t.emergency=false;t.no=t.no.startsWith(t.date.slice(2).replace(/-/g,""))?t.no:nextNo(t.date,t.crew)}
+  else if(el.id==="t_emerg")t.emergency=el.checked;
+  else if(el.id==="t_disp")t.dispatch=el.checked;
+  else if(el.id==="t_sa")t.standAlone=el.value;
+  else if(el.dataset.chk)t.check[el.dataset.chk]=el.checked;
+  else if(["tm_lead","tm_helper"].includes(el.id)){t.tm[el.id.slice(3)]=q4(el.value);el.value=t.tm[el.id.slice(3)]||"";return softUpdate(t)}
+  else if(/^q_\d+$/.test(el.id)){const i=Number(el.id.slice(2)),l=t.lines[i];l.qty=Math.max(.25,q4(el.value));el.value=hrs(l.qty);const la=document.getElementById("la_"+i);if(la)la.textContent=usd(priceFor(BYSKU[l.sku],dayType(t.date,t.emergency))*l.qty);return softUpdate(t)}
+  else return;
+  t.updatedAt=Date.now();save();render();
+});
+
+function softUpdate(t){t.updatedAt=Date.now();save();const tt=document.getElementById("totals");if(tt)tt.innerHTML=totalsHTML(t)}
+/* ---------- demo data (preview only) ---------- */
+function seedDemo(){
+  const mon=mondayOf(today()), st=S.settings;st.lead="Example Lead";st.helper="Example Helper";st.crew=1;st.office=false;st.officeEmail="office@example.com";
+  const mk=(off,name,street,lines,extra)=>{const d=addDays(mon,off);const t={id:uid(),no:nextNo(d,1),crew:1,lead:st.lead,helper:st.helper,date:d,emergency:false,customer:{name,street,city:"Holden",zip:"70744",phone:"",email:""},lines:lines.map(([sku,qty])=>({sku,qty,crew:"Both"})),tm:{lead:0,helper:0,mtl:0,mtlDesc:"",permit:0},dispatch:false,standAlone:"auto",arrive:"08:00",depart:"11:30",notes:"",check:{done:true,clean:true,photos:true,explained:true},sig:"",photos:[],status:"complete",createdAt:Date.now(),updatedAt:Date.now(),demo:true};Object.assign(t,extra||{});S.tickets.push(t);return t};
+  mk(0,"Example customer A","123 Example Rd",[["WTR-004",1],["WTR-006",1],["WTR-015",1],["GAS-005",1]]);
+  mk(0,"Example customer B","45 Sample Ln",[["TOI-005",1],["DRN-001",1]]);
+  mk(1,"Example customer C","9 Demo St",[],{tm:{lead:8,helper:8,mtl:240,mtlDesc:"PEX, fittings",permit:0},notes:"Slab-leak reroute, T&M approved by service manager"});
+  mk(2,"Example customer D","77 Test Ave",[["DRN-001",1]]);
+  mk(5,"Example customer E","310 Example Rd",[["WTR-004",1]],{status:"open",check:{done:false,clean:false,photos:false,explained:false}});
+  const w=weekRec(mon,1);["Monday","Tuesday","Wednesday"].forEach(d=>{w.days[d].lh=10;w.days[d].hh=10});w.days.Saturday.lh=5;w.days.Saturday.hh=5;w.lead=st.lead;w.helper=st.helper;w.updatedAt=Date.now();w.demo=true;
+  S.demo=true;
+}
+
+/* ---------- start ---------- */
+(async function start(){
+  S=load()||blank();
+  setPrices(S.prices?S.prices.items:DATA.items);
+  if(DEMO&&!S.tickets.length&&!S.demoSeen){seedDemo();S.demoSeen=true;save()}
+  await openDB();
+  render();
+  try{const r=await fetch("prices.json",{cache:"no-store"});if(r.ok){const p=await r.json();if(p&&p.items&&p.items.length>10&&(!S.prices||p.updated>S.prices.updated)){S.prices={updated:p.updated,items:p.items};setPrices(p.items);save();render();toast("Price book updated "+p.updated)}}}catch(e){}
+  if("serviceWorker" in navigator&&location.protocol==="https:"){try{navigator.serviceWorker.register("sw.js")}catch(e){}}
+})();
+</script>

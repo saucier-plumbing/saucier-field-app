@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>Saucier Field Tickets</title>
+<meta name="theme-color" content="#1d3347">
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Layout: one-column phone tool; sticky header, content cards by role, fixed bottom tab bar. Copper accent = copper pipe, slate = service truck. */
+:root{
+  --bg:#f3f5f7; --surface:#ffffff; --sunk:#e8edf1; --fg:#17222c; --muted:#5b6b78; --line:#d3dbe2;
+  --accent:#a8571f; --accent-fg:#ffffff; --brand:#1d3347; --brand-fg:#f3f6f8;
+  --ok:#1f7a4a; --ok-bg:#e1f2e8; --warn:#8a5a00; --warn-bg:#fdf0d2; --bad:#b3261e; --bad-bg:#fbe3e1; --info-bg:#e3edf6;
+  --f-display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:10px; --paper:#ffffff; /* signature pad stays white paper with dark ink in both themes */
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f161c; --surface:#18222b; --sunk:#202c36; --fg:#e7edf1; --muted:#9aabb8; --line:#2e3c48;
+  --accent:#e08a4c; --accent-fg:#1a0e05; --brand:#0b1218; --brand-fg:#e7edf1;
+  --ok:#6fd39c; --ok-bg:#163526; --warn:#f2c46b; --warn-bg:#3a2d10; --bad:#ff8f86; --bad-bg:#3d1a18; --info-bg:#1b2c3b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f161c; --surface:#18222b; --sunk:#202c36; --fg:#e7edf1; --muted:#9aabb8; --line:#2e3c48;
+  --accent:#e08a4c; --accent-fg:#1a0e05; --brand:#0b1218; --brand-fg:#e7edf1;
+  --ok:#6fd39c; --ok-bg:#163526; --warn:#f2c46b; --warn-bg:#3a2d10; --bad:#ff8f86; --bad-bg:#3d1a18; --info-bg:#1b2c3b; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.4;margin:0}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:.01em}
+h2{font-size:1.35rem} h3{font-size:1.1rem}
+button,input,select,textarea{font:inherit;color:inherit}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--brand);color:var(--brand-fg);padding:10px 16px;display:flex;align-items:center;gap:10px}
+.top h1{font-size:1.25rem;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .crew{font-size:.8rem;opacity:.85;text-transform:uppercase;letter-spacing:.06em}
+.iconbtn{background:transparent;border:1px solid rgba(255,255,255,.3);color:var(--brand-fg);border-radius:8px;padding:6px 10px;font-size:.85rem}
+main{padding:12px 16px 110px;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs button{flex:1;background:none;border:0;padding:10px 2px 12px;font-family:var(--f-display);font-weight:600;font-size:.95rem;color:var(--muted);border-top:3px solid transparent}
+.tabs button[aria-current="page"]{color:var(--accent);border-top-color:var(--accent)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row>*{min-width:0}
+.grow{flex:1}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px}
+@media (max-width:420px){.grid3{grid-template-columns:1fr 1fr}.grid3>:first-child{grid-column:1/-1}}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;min-width:0}
+input,select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:16px;width:100%;min-width:0}
+textarea{min-height:70px;resize:vertical}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 14px;font-weight:600;cursor:pointer;min-height:44px}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn.dark{background:var(--brand);color:var(--brand-fg);border-color:var(--brand)}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.small{min-height:34px;padding:6px 10px;font-size:.9rem}
+.btn:disabled{opacity:.45}
+.muted{color:var(--muted)} .small{font-size:.85rem}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill{display:inline-block;border-radius:999px;padding:2px 10px;font-size:.78rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap}
+.p-open{background:var(--warn-bg);color:var(--warn)} .p-complete{background:var(--info-bg);color:var(--fg)}
+.p-sent{background:var(--ok-bg);color:var(--ok)} .p-invoiced{background:var(--sunk);color:var(--muted)}
+.p-day{background:var(--sunk);color:var(--fg)} .p-prem{background:var(--warn-bg);color:var(--warn)} .p-hol{background:var(--bad-bg);color:var(--bad)}
+.note{border-radius:8px;padding:10px 12px;font-size:.92rem}
+.note.warn{background:var(--warn-bg);color:var(--warn)} .note.bad{background:var(--bad-bg);color:var(--bad)} .note.ok{background:var(--ok-bg);color:var(--ok)} .note.info{background:var(--info-bg)}
+.list{display:flex;flex-direction:column}
+.item{display:flex;gap:10px;align-items:center;padding:11px 2px;border-bottom:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-top:0;text-align:left;width:100%}
+.item:last-child{border-bottom:0}
+.item .t{font-weight:600}
+.item .s{font-size:.85rem;color:var(--muted)}
+.item .price{font-family:var(--f-display);font-weight:700;font-size:1.15rem}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;white-space:nowrap;font-size:.9rem}
+.chip[aria-pressed="true"]{background:var(--brand);color:var(--brand-fg);border-color:var(--brand)}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{flex:1;border:0;background:var(--surface);padding:8px 6px;font-weight:600;font-size:.9rem}
+.seg button[aria-pressed="true"]{background:var(--brand);color:var(--brand-fg)}
+.line{display:grid;grid-template-columns:1fr auto;gap:6px 10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.line:last-child{border-bottom:0}
+.stepper{display:flex;align-items:center;gap:4px}
+.stepper button{width:38px;height:38px;border-radius:8px;border:1px solid var(--line);background:var(--sunk);font-size:1.2rem;font-weight:700}
+.stepper input{width:64px;text-align:center;padding:8px 4px}
+table{border-collapse:collapse;width:100%}
+th,td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+td.r,th.r{text-align:right}
+.scroll{overflow-x:auto}
+.total{font-family:var(--f-display);font-size:1.6rem;font-weight:700}
+.sig{border:1px dashed var(--muted);border-radius:8px;background:var(--paper);touch-action:none;width:100%;height:140px;display:block}
+.photos{display:flex;gap:8px;flex-wrap:wrap}
+.photos figure{margin:0;position:relative}
+.photos img{width:84px;height:84px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.photos button{position:absolute;top:-6px;right:-6px;border-radius:999px;border:0;background:var(--bad);color:#fff;width:24px;height:24px;font-size:.8rem}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:.98rem}
+.check input{width:22px;height:22px;flex:none;margin-top:1px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:84px;background:var(--brand);color:var(--brand-fg);padding:10px 16px;border-radius:999px;z-index:9;font-weight:600;max-width:90vw}
+.pickbar{position:sticky;top:calc(env(safe-area-inset-top,0px) + 52px);z-index:4;background:var(--accent);color:var(--accent-fg);border-radius:var(--r);padding:10px 12px;display:flex;align-items:center;gap:10px}
+.pickbar .btn{background:var(--accent-fg);color:var(--accent);border:0;min-height:36px}
+pre.out{white-space:pre-wrap;word-break:break-word;background:var(--sunk);border-radius:8px;padding:10px;font-size:.8rem;max-height:220px;overflow:auto;margin:0}
+.kv{display:grid;grid-template-columns:1fr auto;gap:4px 12px}
+.demo{background:var(--info-bg);border-radius:8px;padding:8px 12px;font-size:.88rem}
+details>summary{cursor:pointer;font-family:var(--f-display);font-weight:600;font-size:1.05rem}
+@media (prefers-reduced-motion:no-preference){.toast{animation:up .18s ease-out}@keyframes up{from{transform:translate(-50%,8px);opacity:0}}}
+</style>
+
+<style>:root{padding-top:env(safe-area-inset-top,0px)}[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+<header class="top">
+  <h1 id="hdr">Saucier Field Tickets</h1>
+  <span class="crew" id="hdrCrew"></span>
+  <button class="iconbtn" data-act="go" data-v="settings" aria-label="Settings">Settings</button>
+</header>
+<main id="main"></main>
+<nav class="tabs" id="tabs"></nav>
+<div id="toastHost"></div>
+
+<script>
+"use strict";
+const DATA = {"items":[{"sku":"DRN-001","name":"Clear Bathroom Sink Drain","hrs":0.5,"cat":"Drain & Sewer","list":140,"sa":275,"ah":210,"hol":280,"desc":"Clear accessible lavatory drain","mtl":0,"qbo":"DRN-001 Clear Bathroom Sink Drain"},{"sku":"DRN-002","name":"Clear Kitchen Sink Drain","hrs":0.5,"cat":"Drain & Sewer","list":140,"sa":275,"ah":210,"hol":280,"desc":"Clear accessible kitchen branch","mtl":0,"qbo":"DRN-002 Clear Kitchen Sink Drain"},{"sku":"DRN-003","name":"Clear Tub / Shower Drain","hrs":0.5,"cat":"Drain & Sewer","list":140,"sa":275,"ah":210,"hol":280,"desc":"Clear accessible tub/shower drain","mtl":0,"qbo":"DRN-003 Clear Tub / Shower Drain"},{"sku":"DRN-004","name":"Clear Toilet Stoppage","hrs":0.5,"cat":"Drain & Sewer","list":140,"sa":275,"ah":210,"hol":280,"desc":"Auger standard toilet","mtl":0,"qbo":"DRN-004 Clear Toilet Stoppage"},{"sku":"DRN-005","name":"Main Sewer Drain Cleaning","hrs":1,"cat":"Drain & Sewer","list":275,"sa":275,"ah":415,"hol":550,"desc":"Clear main sewer via accessible cleanout","mtl":0,"qbo":"DRN-005 Main Sewer Drain Cleaning"},{"sku":"DRN-006","name":"Sewer Camera Inspection","hrs":1,"cat":"Drain & Sewer","list":275,"sa":275,"ah":415,"hol":550,"desc":"Camera accessible sewer line","mtl":0,"qbo":"DRN-006 Sewer Camera Inspection"},{"sku":"DRN-007","name":"Sewer Locate with Camera","hrs":1,"cat":"Drain & Sewer","list":275,"sa":275,"ah":415,"hol":550,"desc":"Camera plus surface locating","mtl":0,"qbo":"DRN-007 Sewer Locate with Camera"},{"sku":"DRN-008","name":"Hydro Jetting - Residential","hrs":2,"cat":"Drain & Sewer","list":550,"sa":550,"ah":825,"hol":1100,"desc":"Hydro jet accessible residential line (plus equipment charge?)","mtl":0,"qbo":"DRN-008 Hydro Jetting - Residential"},{"sku":"DRN-009","name":"Clear Floor Drain / Area Drain","hrs":0.5,"cat":"Drain & Sewer","list":140,"sa":275,"ah":210,"hol":280,"desc":"Clear accessible floor or area drain","mtl":0,"qbo":"DRN-009 Clear Floor Drain / Area Drain"},{"sku":"DRN-010","name":"Clear Grease Line - Commercial Kitchen","hrs":1.5,"cat":"Drain & Sewer","list":415,"sa":415,"ah":625,"hol":830,"desc":"Clear of commercial kitchen grease waste line","mtl":0,"qbo":"DRN-010 Clear Grease Line - Commercial Kitchen"},{"sku":"DRN-011","name":"Sewer Line Descaling - Chain Knocker","hrs":1.5,"cat":"Drain & Sewer","list":415,"sa":415,"ah":625,"hol":830,"desc":"Mechanical descaling of cast iron sewer line","mtl":0,"qbo":"DRN-011 Sewer Line Descaling - Chain Knocker"},{"sku":"DRN-012","name":"Install Backwater Valve - Accessible","hrs":0.5,"cat":"Drain & Sewer","list":140,"sa":275,"ah":210,"hol":280,"desc":"Cut in and install backwater valve on accessible sewer line","mtl":0,"qbo":"DRN-012 Install Backwater Valve - Accessible"},{"sku":"DRN-013","name":"Install / Replace Sewer Cleanout","hrs":0.5,"cat":"Drain & Sewer","list":140,"sa":275,"ah":210,"hol":280,"desc":"Install new cleanout or replace damaged cleanout cap and fitting","mtl":0,"qbo":"DRN-013 Install / Replace Sewer Cleanout"},{"sku":"DRN-014","name":"Drain Maintenance Treatment - Chlorine Service","hrs":0.5,"cat":"Drain & Sewer","list":140,"sa":275,"ah":210,"hol":280,"desc":"Chlorine treatment of kitchen and main lines","mtl":0,"qbo":"DRN-014 Drain Maintenance Treatment - Chlorine Service"},{"sku":"DRN-015","name":"Clear Main Line from Roof Vent","hrs":1.5,"cat":"Drain & Sewer","list":415,"sa":415,"ah":625,"hol":830,"desc":"Clear main line through roof vent when no cleanout is available","mtl":0,"qbo":"DRN-015 Clear Main Line from Roof Vent"},{"sku":"DRN-016","name":"Replace Sump Pump","hrs":1.5,"cat":"Drain & Sewer","list":415,"sa":415,"ah":625,"hol":830,"desc":"Pump, check valve and discharge connection","mtl":0,"qbo":"DRN-016 Replace Sump Pump"},{"sku":"DRN-017","name":"Replace Sewage Ejector Pump / Grinder Pump","hrs":1.5,"cat":"Drain & Sewer","list":415,"sa":415,"ah":625,"hol":830,"desc":"Ejector / Grinder pump replacement with basin seal and vent check","mtl":0,"qbo":"DRN-017 Replace Sewage Ejector Pump / Grinder Pump"},{"sku":"DRN-018","name":"Replace Sump Discharge Check Valve","hrs":1,"cat":"Drain & Sewer","list":275,"sa":275,"ah":415,"hol":550,"desc":"Check valve replacement on existing discharge line","mtl":0,"qbo":"DRN-018 Replace Sump Discharge Check Valve"},{"sku":"DRN-019","name":"Install / Repair Floor Drain","hrs":5,"cat":"Drain & Sewer","list":1375,"sa":1375,"ah":2065,"hol":2750,"desc":"New floor drain or repair of existing body | use trapSoux chief rough in drain, trim, and concrete pour back","mtl":0,"qbo":"DRN-019 Install / Repair Floor Drain"},{"sku":"DRN-020","name":"Install Sump Pump - New Pit","hrs":6,"cat":"Drain & Sewer","list":1650,"sa":1650,"ah":2475,"hol":3300,"desc":"Excavate pit, set basin, pump and discharge line","mtl":0,"qbo":"DRN-020 Install Sump Pump - New Pit"},{"sku":"DRN-021","name":"Repair Sump Pump - Switch / Motor","hrs":2,"cat":"Drain & Sewer","list":550,"sa":550,"ah":825,"hol":1100,"desc":"Diagnose and repair float switch or pump motor","mtl":0,"qbo":"DRN-021 Repair Sump Pump - Switch / Motor"},{"sku":"DRN-022","name":"Install Sewage Ejector System / Grinder pump","hrs":5,"cat":"Drain & Sewer","list":1375,"sa":1375,"ah":2065,"hol":2750,"desc":"New basin, ejector pump, grinder pump, vent and discharge piping","mtl":0,"qbo":"DRN-022 Install Sewage Ejector System / Grinder pump"},{"sku":"DRN-023","name":"Sump Pump Check & Test","hrs":1,"cat":"Drain & Sewer","list":275,"sa":275,"ah":415,"hol":550,"desc":"Preventive test of pump, float and discharge | Accessible","mtl":0,"qbo":"DRN-023 Sump Pump Check & Test"},{"sku":"DRN-024","name":"Install Above Ground Grease Interceptor","hrs":2,"cat":"Drain & Sewer","list":550,"sa":550,"ah":825,"hol":1100,"desc":"Set and connect above ground exterior or in-floor grease interceptor","mtl":0,"qbo":"DRN-024 Install Above Ground Grease Interceptor"},{"sku":"EMG-001","name":"Emergency Water Shutoff","hrs":0.5,"cat":"Emergency & Misc.","list":140,"sa":275,"ah":210,"hol":280,"desc":"Stop active leak ","mtl":0,"qbo":"EMG-001 Emergency Water Shutoff"},{"sku":"EMG-002","name":"Winterize Vacant Property","hrs":1,"cat":"Emergency & Misc.","list":275,"sa":275,"ah":415,"hol":550,"desc":"Drain and protect system for vacancy or seasonal shutdown","mtl":0,"qbo":"EMG-002 Winterize Vacant Property"},{"sku":"EMG-003","name":"De-Winterize / Reactivate Service","hrs":1,"cat":"Emergency & Misc.","list":275,"sa":275,"ah":415,"hol":550,"desc":"Recharge system, check all fixtures for leaks","mtl":0,"qbo":"EMG-003 De-Winterize / Reactivate Service"},{"sku":"EMG-004","name":"Temporary Water Bypass Setup","hrs":1,"cat":"Emergency & Misc.","list":275,"sa":275,"ah":415,"hol":550,"desc":"Temporary bypass to restore service pending repair","mtl":0,"qbo":"EMG-004 Temporary Water Bypass Setup"},{"sku":"FAU-001","name":"Replace Bathroom Faucet - Customer Supplied","hrs":0.5,"cat":"Faucets & Fixtures","list":140,"sa":275,"ah":210,"hol":280,"desc":"Replace accessible lavatory faucet","mtl":0,"qbo":"FAU-001 Replace Bathroom Faucet - Customer Supplied"},{"sku":"FAU-002","name":"Replace Kitchen Faucet - Customer Supplied","hrs":0.5,"cat":"Faucets & Fixtures","list":140,"sa":275,"ah":210,"hol":280,"desc":"Replace accessible kitchen faucet","mtl":0,"qbo":"FAU-002 Replace Kitchen Faucet - Customer Supplied"},{"sku":"FAU-003","name":"Replace Tub/Shower Cartridge","hrs":0.5,"cat":"Faucets & Fixtures","list":140,"sa":275,"ah":210,"hol":280,"desc":"Replace accessible common cartridge (labor only) - Cartridge priced seperately","mtl":0,"qbo":"FAU-003 Replace Tub/Shower Cartridge"},{"sku":"FAU-004","name":"Replace Shower Head - Customer Supplied","hrs":0.5,"cat":"Faucets & Fixtures","list":140,"sa":275,"ah":210,"hol":280,"desc":"Standard shower head (labor only)","mtl":0,"qbo":"FAU-004 Replace Shower Head - Customer Supplied"},{"sku":"FAU-005","name":"Replace Laundry Faucet - Customer Supplied","hrs":0.5,"cat":"Faucets & Fixtures","list":140,"sa":275,"ah":210,"hol":280,"desc":"Replace standard laundry faucet (labor only)","mtl":0,"qbo":"FAU-005 Replace Laundry Faucet - Customer Supplied"},{"sku":"FAU-006","name":"Replace Commercial Metering / Sensor Faucet","hrs":0.5,"cat":"Faucets & Fixtures","list":140,"sa":275,"ah":210,"hol":280,"desc":"Battery or hardwired sensor lavatory faucet","mtl":0,"qbo":"FAU-006 Replace Commercial Metering / Sensor Faucet"},{"sku":"FAU-007","name":"Replace Sensor Faucet Solenoid or Battery Pack","hrs":0.5,"cat":"Faucets & Fixtures","list":140,"sa":275,"ah":210,"hol":280,"desc":"Diagnose and replace solenoid or power module","mtl":0,"qbo":"FAU-007 Replace Sensor Faucet Solenoid or Battery Pack"},{"sku":"FAU-008","name":"Install ADA Handle / Lever Kit","hrs":0.5,"cat":"Faucets & Fixtures","list":140,"sa":275,"ah":210,"hol":280,"desc":"Convert existing faucet to ADA-compliant lever handles","mtl":0,"qbo":"FAU-008 Install ADA Handle / Lever Kit"},{"sku":"FAU-009","name":"Replace Tub Spout & Diverter","hrs":0.5,"cat":"Faucets & Fixtures","list":140,"sa":275,"ah":210,"hol":280,"desc":"Slip-fit or threaded tub spout with diverter","mtl":0,"qbo":"FAU-009 Replace Tub Spout & Diverter"},{"sku":"FAU-010","name":"Install Bidet Seat - Customer Supplied","hrs":0.5,"cat":"Faucets & Fixtures","list":140,"sa":275,"ah":210,"hol":280,"desc":"Install customer-supplied bidet seat (labor only)","mtl":0,"qbo":"FAU-010 Install Bidet Seat - Customer Supplied"},{"sku":"FAU-011","name":"Replace Shower Valve - Access Required","hrs":2,"cat":"Faucets & Fixtures","list":550,"sa":550,"ah":825,"hol":1100,"desc":"Replace shower valve body including wall access and patch-ready opening","mtl":0,"qbo":"FAU-011 Replace Shower Valve - Access Required"},{"sku":"FAU-012","name":"Replace Mop Sink Faucet w/ Vacuum Breaker","hrs":1,"cat":"Faucets & Fixtures","list":275,"sa":275,"ah":415,"hol":550,"desc":"Service faucet with integral vacuum breaker and pail hook (labor only)","mtl":0,"qbo":"FAU-012 Replace Mop Sink Faucet w/ Vacuum Breaker"},{"sku":"FAU-013","name":"Install Emergency Eyewash / Safety Fixture","hrs":2.5,"cat":"Faucets & Fixtures","list":690,"sa":690,"ah":1035,"hol":1380,"desc":"Eyewash station plumbed with tempered supply","mtl":0,"qbo":"FAU-013 Install Emergency Eyewash / Safety Fixture"},{"sku":"FAU-014","name":"Replace Drinking Fountain / Bottle Filler","hrs":2.5,"cat":"Faucets & Fixtures","list":690,"sa":690,"ah":1035,"hol":1380,"desc":"Wall-mount fountain or bottle filler installed on existing rough-in","mtl":0,"qbo":"FAU-014 Replace Drinking Fountain / Bottle Filler"},{"sku":"FAU-015","name":"Replace Shower / Tub Trim Kit","hrs":0.5,"cat":"Faucets & Fixtures","list":140,"sa":275,"ah":210,"hol":280,"desc":"Replace escutcheon, handle and trim on existing valve","mtl":0,"qbo":"FAU-015 Replace Shower / Tub Trim Kit"},{"sku":"FAU-016","name":"Install / Replace Bathtub","hrs":5,"cat":"Faucets & Fixtures","list":1375,"sa":1375,"ah":2065,"hol":2750,"desc":"Remove and set tub with waste, overflow and valve connection","mtl":0,"qbo":"FAU-016 Install / Replace Bathtub"},{"sku":"FAU-017","name":"Install Shower Pan / Base","hrs":1,"cat":"Faucets & Fixtures","list":275,"sa":275,"ah":415,"hol":550,"desc":"Set pre-formed base and connect drain assembly","mtl":0,"qbo":"FAU-017 Install Shower Pan / Base"},{"sku":"FAU-018","name":"Install Outdoor Shower - Customer Supplied","hrs":5,"cat":"Faucets & Fixtures","list":1375,"sa":1375,"ah":2065,"hol":2750,"desc":"Exterior shower with valve, riser and drain provision","mtl":0,"qbo":"FAU-018 Install Outdoor Shower - Customer Supplied"},{"sku":"GAS-001","name":"Gas Leak Investigation","hrs":2,"cat":"Gas Service","list":550,"sa":550,"ah":825,"hol":1100,"desc":"Basic accessible gas investigation","mtl":0,"qbo":"GAS-001 Gas Leak Investigation"},{"sku":"GAS-002","name":"Gas Pressure Test","hrs":1,"cat":"Gas Service","list":275,"sa":275,"ah":415,"hol":550,"desc":"Pressure test accessible system","mtl":0,"qbo":"GAS-002 Gas Pressure Test"},{"sku":"GAS-003","name":"Install Gas Appliance Shutoff, Gas Cock","hrs":1,"cat":"Gas Service","list":305,"sa":305,"ah":460,"hol":610,"desc":"Install Gas Appliance Shutoff less than 18\" ","mtl":27,"qbo":"GAS-003 Install Gas Appliance Shutoff, Gas Cock"},{"sku":"GAS-004","name":"Connect Comercial Gas Range or Dryer","hrs":1,"cat":"Gas Service","list":765,"sa":765,"ah":1150,"hol":1530,"desc":"Connect Gas Range or Dryer less than 18\" | Connect to existing approved outlet","mtl":488,"qbo":"GAS-004 Connect Comercial Gas Range or Dryer"},{"sku":"GAS-005","name":"Connect Gas Water Heater - Flex & Shutoff, Gas Cock","hrs":0.5,"cat":"Gas Service","list":240,"sa":375,"ah":360,"hol":480,"desc":"Connect Gas Water Heater - Flex & Shutoff less than 18\" | Gas connection with shutoff, flex ","mtl":98,"qbo":"GAS-005 Connect Gas Water Heater - Flex & Shutoff, Gas Cock"},{"sku":"GAS-006","name":"Replace Gas Regulator","hrs":1,"cat":"Gas Service","list":275,"sa":275,"ah":415,"hol":550,"desc":"Replace appliance or line pressure regulator","mtl":0,"qbo":"GAS-006 Replace Gas Regulator"},{"sku":"GAS-007","name":"Reconnect Gas Meter & Relight Appliances","hrs":1,"cat":"Gas Service","list":275,"sa":275,"ah":415,"hol":550,"desc":"Meter reconnect, leak test and relight all appliances","mtl":0,"qbo":"GAS-007 Reconnect Gas Meter & Relight Appliances"},{"sku":"GAS-008","name":"Install Gas Flex Connector Kit","hrs":0.5,"cat":"Gas Service","list":140,"sa":275,"ah":210,"hol":280,"desc":"Code-compliant flex connector and shutoff at appliance","mtl":0,"qbo":"GAS-008 Install Gas Flex Connector Kit"},{"sku":"GAS-009","name":"Install Gas Stub-Out for Future Appliance","hrs":2,"cat":"Gas Service","list":550,"sa":550,"ah":825,"hol":1100,"desc":"Capped and tested stub-out with shutoff for future use","mtl":0,"qbo":"GAS-009 Install Gas Stub-Out for Future Appliance"},{"sku":"GAS-010","name":"Install Sediment Trap/Drip Leg","hrs":1,"cat":"Gas Service","list":315,"sa":315,"ah":475,"hol":630,"desc":"Sediment trap inside appliance 1\" or under.","mtl":40,"qbo":"GAS-010 Install Sediment Trap/Drip Leg"},{"sku":"GEN-001","name":"Plumbing Inspection","hrs":0.5,"cat":"General Service","list":140,"sa":275,"ah":210,"hol":280,"desc":"Full fixture and system inspection with written report for sale or tenant turnover","mtl":0,"qbo":"GEN-001 Plumbing Inspection"},{"sku":"GEN-002","name":"Water Pressure Test","hrs":0.5,"cat":"General Service","list":140,"sa":275,"ah":210,"hol":280,"desc":"Static/dynamic pressure test","mtl":0,"qbo":"GEN-002 Water Pressure Test"},{"sku":"GEN-003","name":"Fixture Trim-Out - Per Fixture","hrs":0.5,"cat":"General Service","list":140,"sa":275,"ah":210,"hol":280,"desc":"Set and connect fixture where rough-in is complete (owner supplied trim)","mtl":0,"qbo":"GEN-003 Fixture Trim-Out - Per Fixture"},{"sku":"GEN-004","name":"Permit Coordination & Inspection Attendance","hrs":1,"cat":"General Service","list":275,"sa":275,"ah":415,"hol":550,"desc":"Pull permit and meet inspector on site","mtl":0,"qbo":"GEN-004 Permit Coordination & Inspection Attendance"},{"sku":"GEN-005","name":"Install Water Softener","hrs":1.5,"cat":"General Service","list":415,"sa":415,"ah":625,"hol":830,"desc":"Set softener, connect bypass, drain and brine line; program unit (Customer Suppied)","mtl":0,"qbo":"GEN-005 Install Water Softener"},{"sku":"GEN-006","name":"Service / Repair Water Softener","hrs":1,"cat":"General Service","list":275,"sa":275,"ah":415,"hol":550,"desc":"Diagnose and repair resin, valve or control head issues","mtl":0,"qbo":"GEN-006 Service / Repair Water Softener"},{"sku":"GEN-007","name":"Install Whole-House Water Filter","hrs":2,"cat":"General Service","list":550,"sa":550,"ah":825,"hol":1100,"desc":"Sediment or carbon filter housing installed on main line   (customer supplied)","mtl":0,"qbo":"GEN-007 Install Whole-House Water Filter"},{"sku":"GEN-008","name":"Replace Whole-House Filter Cartridge","hrs":0.5,"cat":"General Service","list":140,"sa":275,"ah":210,"hol":280,"desc":"Cartridge change-out and system flush (customer Supplied)","mtl":0,"qbo":"GEN-008 Replace Whole-House Filter Cartridge"},{"sku":"GEN-009","name":"Install Under-Sink Reverse Osmosis System","hrs":1.5,"cat":"General Service","list":415,"sa":415,"ah":625,"hol":830,"desc":"RO unit, faucet and drain saddle installed (customer Supplied)","mtl":0,"qbo":"GEN-009 Install Under-Sink Reverse Osmosis System"},{"sku":"GEN-010","name":"Annual Maintenance Plan Visit","hrs":3,"cat":"General Service","list":825,"sa":825,"ah":1240,"hol":1650,"desc":"Scheduled whole-system check, water heater flush and fixture inspection","mtl":0,"qbo":"GEN-010 Annual Maintenance Plan Visit"},{"sku":"GEN-011","name":"Rebuild Backflow Preventer","hrs":1,"cat":"General Service","list":275,"sa":275,"ah":415,"hol":550,"desc":"Rebuild RPZ or DCVA with manufacturer kit and retest","mtl":0,"qbo":"GEN-011 Rebuild Backflow Preventer"},{"sku":"GEN-012","name":"Irrigation System Tie-In / Hookup","hrs":1.5,"cat":"General Service","list":415,"sa":415,"ah":625,"hol":830,"desc":"Connect irrigation main to potable supply with required backflow","mtl":0,"qbo":"GEN-012 Irrigation System Tie-In / Hookup"},{"sku":"GEN-013","name":"Bathroom Rough-In - Per Fixture","hrs":1.5,"cat":"General Service","list":415,"sa":415,"ah":625,"hol":830,"desc":"New-construction or remodel rough-in, priced per fixture","mtl":0,"qbo":"GEN-013 Bathroom Rough-In - Per Fixture"},{"sku":"GEN-014","name":"Kitchen Rough-In","hrs":1.5,"cat":"General Service","list":415,"sa":415,"ah":625,"hol":830,"desc":"Supply, waste and vent rough-in for kitchen remodel or new build (Same as bathrrom)","mtl":0,"qbo":"GEN-014 Kitchen Rough-In"},{"sku":"GEN-015","name":"Laundry Room Rough-In","hrs":1.5,"cat":"General Service","list":415,"sa":415,"ah":625,"hol":830,"desc":"Washer box, drain and vent rough-in","mtl":0,"qbo":"GEN-015 Laundry Room Rough-In"},{"sku":"GEN-016","name":"Stack Out / Top Out - New Construction","hrs":2,"cat":"General Service","list":550,"sa":550,"ah":825,"hol":1100,"desc":"Above-slab waste and vent stack work through top out","mtl":0,"qbo":"GEN-016 Stack Out / Top Out - New Construction"},{"sku":"GEN-017","name":"Underground / Slab Rough-In","hrs":2,"cat":"General Service","list":550,"sa":550,"ah":825,"hol":1100,"desc":"Under-slab waste and water rough-in prior to pour","mtl":0,"qbo":"GEN-017 Underground / Slab Rough-In"},{"sku":"GEN-018","name":"Commercial Rough-In - Per Fixture","hrs":2,"cat":"General Service","list":550,"sa":550,"ah":825,"hol":1100,"desc":"Tenant improvement rough-in, priced per fixture","mtl":0,"qbo":"GEN-018 Commercial Rough-In - Per Fixture"},{"sku":"PVL-001","name":"Replace Angle Stop","hrs":0.25,"cat":"Piping, Valves & Leaks","list":100,"sa":305,"ah":150,"hol":200,"desc":"Accessible fixture shutoff","mtl":27,"qbo":"PVL-001 Replace Angle Stop"},{"sku":"PVL-002","name":"Replace Main Water Shutoff Valve","hrs":0.5,"cat":"Piping, Valves & Leaks","list":140,"sa":275,"ah":210,"hol":280,"desc":"Accessible main valve","mtl":0,"qbo":"PVL-002 Replace Main Water Shutoff Valve"},{"sku":"PVL-003","name":"Replace RPZ Backflow, 1\" or under","hrs":1,"cat":"Piping, Valves & Leaks","list":1575,"sa":1575,"ah":2365,"hol":3150,"desc":"Standard RPZ Backflow","mtl":1300,"qbo":"PVL-003 Replace RPZ Backflow, 1\" or under"},{"sku":"PVL-004","name":"Replace Standard Hose Bibb 1/2\"","hrs":0.5,"cat":"Piping, Valves & Leaks","list":165,"sa":300,"ah":250,"hol":330,"desc":"Replace Standard Hose Bibb 1/2\"","mtl":22.92,"qbo":"PVL-004 Replace Standard Hose Bibb 1/2\""},{"sku":"PVL-005","name":"Install Thermostatic Mixing Valve","hrs":1,"cat":"Piping, Valves & Leaks","list":275,"sa":275,"ah":415,"hol":550,"desc":"Tempering valve installed at heater or fixture group","mtl":0,"qbo":"PVL-005 Install Thermostatic Mixing Valve"},{"sku":"PVL-006","name":"Replace Water Meter Yoke / Assembly","hrs":1,"cat":"Piping, Valves & Leaks","list":275,"sa":275,"ah":415,"hol":550,"desc":"Replace meter yoke, spacer and valves on private side","mtl":0,"qbo":"PVL-006 Replace Water Meter Yoke / Assembly"},{"sku":"PVL-007","name":"Replace Freeze-Proof Hose Bibb","hrs":2,"cat":"Piping, Valves & Leaks","list":550,"sa":550,"ah":825,"hol":1100,"desc":"Frost-free sillcock replacement","mtl":0,"qbo":"PVL-007 Replace Freeze-Proof Hose Bibb"},{"sku":"PVL-008","name":"Install Water Hammer Arrestor","hrs":0.5,"cat":"Piping, Valves & Leaks","list":140,"sa":275,"ah":210,"hol":280,"desc":"Arrestor installed at problem fixture or branch","mtl":0,"qbo":"PVL-008 Install Water Hammer Arrestor"},{"sku":"PVL-009","name":"Install Air Admittance Valve","hrs":0.5,"cat":"Piping, Valves & Leaks","list":140,"sa":275,"ah":210,"hol":280,"desc":"AAV installed where venting is not accessible and code allows","mtl":0,"qbo":"PVL-009 Install Air Admittance Valve"},{"sku":"PVL-010","name":"Clear Roof Vent Stoppage","hrs":1.5,"cat":"Piping, Valves & Leaks","list":415,"sa":415,"ah":625,"hol":830,"desc":"Clear blocked vent stack from roof","mtl":0,"qbo":"PVL-010 Clear Roof Vent Stoppage"},{"sku":"PVL-011","name":"Install Pressure Gauge / Test Port","hrs":0.5,"cat":"Piping, Valves & Leaks","list":140,"sa":275,"ah":210,"hol":280,"desc":"Gauge or test port added at hose bibb or main","mtl":0,"qbo":"PVL-011 Install Pressure Gauge / Test Port"},{"sku":"PVL-012","name":"Thaw Frozen Pipe - No Damage","hrs":0.5,"cat":"Piping, Valves & Leaks","list":140,"sa":275,"ah":210,"hol":280,"desc":"Locate and thaw frozen line, verify no rupture per 5'","mtl":0,"qbo":"PVL-012 Thaw Frozen Pipe - No Damage"},{"sku":"SNK-001","name":"Replace Garbage Disposal - Customer Supplied","hrs":0.5,"cat":"Sinks & Disposals","list":140,"sa":275,"ah":210,"hol":280,"desc":"Replace existing disposal - Labor only","mtl":0,"qbo":"SNK-001 Replace Garbage Disposal - Customer Supplied"},{"sku":"SNK-002","name":"Furnish & Install 1/2 HP Disposal","hrs":0.5,"cat":"Sinks & Disposals","list":360,"sa":495,"ah":540,"hol":720,"desc":"Includes Labor and Standard disposal","mtl":220,"qbo":"SNK-002 Furnish & Install 1/2 HP Disposal"},{"sku":"SNK-003","name":"Replace Kitchen Sink - Drop-In","hrs":1.5,"cat":"Sinks & Disposals","list":415,"sa":415,"ah":625,"hol":830,"desc":"Countertop modification excluded","mtl":0,"qbo":"SNK-003 Replace Kitchen Sink - Drop-In"},{"sku":"SNK-004","name":"Replace Lavatory Sink","hrs":0.5,"cat":"Sinks & Disposals","list":140,"sa":275,"ah":210,"hol":280,"desc":"Standard sink allowance","mtl":0,"qbo":"SNK-004 Replace Lavatory Sink"},{"sku":"SNK-005","name":"Replace Basket Strainer","hrs":0.5,"cat":"Sinks & Disposals","list":275,"sa":410,"ah":415,"hol":550,"desc":"Includes Labor and Standard basket strainer","mtl":134,"qbo":"SNK-005 Replace Basket Strainer"},{"sku":"SNK-006","name":"Replace Commercial 3-Compartment Sink Faucet","hrs":1,"cat":"Sinks & Disposals","list":275,"sa":275,"ah":415,"hol":550,"desc":"Wall-mount commercial pre-rinse or swing faucet","mtl":0,"qbo":"SNK-006 Replace Commercial 3-Compartment Sink Faucet"},{"sku":"SNK-007","name":"Install Mop Sink / Service Sink","hrs":0.5,"cat":"Sinks & Disposals","list":140,"sa":275,"ah":210,"hol":280,"desc":"Set service basin and connect supply, waste and faucet","mtl":0,"qbo":"SNK-007 Install Mop Sink / Service Sink"},{"sku":"SNK-008","name":"Replace Customer Provided Dishwasher","hrs":1,"cat":"Sinks & Disposals","list":365,"sa":365,"ah":550,"hol":730,"desc":"Supply and Drain Connection install 1 1/2\" female or top hat dishwasher tail piece as well as  13/8\" hose clamp. Use 5' dishwasher hose, and dishwasher 90' (Needs material)","mtl":90,"qbo":"SNK-008 Replace Customer Provided Dishwasher"},{"sku":"SNK-009","name":"Install Ice Maker / Refrigerator Water Line up to 6'","hrs":0.5,"cat":"Sinks & Disposals","list":190,"sa":325,"ah":285,"hol":380,"desc":"Run and connect water line with shutoff Install using 6' 1/4\" ice maker b raided line with a 3/8\" comp coupling and 2 teflon ferrals (needs material)","mtl":48,"qbo":"SNK-009 Install Ice Maker / Refrigerator Water Line up to 6"},{"sku":"SNK-010","name":"Furnish & Install 3/4 HP Disposal","hrs":0.5,"cat":"Sinks & Disposals","list":500,"sa":635,"ah":750,"hol":1000,"desc":"Heavy-duty disposal furnished and installed","mtl":360,"qbo":"SNK-010 Furnish & Install 3/4 HP Disposal"},{"sku":"SNK-011","name":"Install Instant Hot Water Dispenser","hrs":2,"cat":"Sinks & Disposals","list":550,"sa":550,"ah":825,"hol":1100,"desc":"Dispenser tank and faucet installed with dedicated outlet check","mtl":0,"qbo":"SNK-011 Install Instant Hot Water Dispenser"},{"sku":"SNK-012","name":"Install Pot Filler Rough","hrs":1.5,"cat":"Sinks & Disposals","list":415,"sa":415,"ah":625,"hol":830,"desc":"Wall-mount pot filler rough with new supply and shutoff","mtl":0,"qbo":"SNK-012 Install Pot Filler Rough"},{"sku":"SNK-013","name":"Install Filtered Water Faucet","hrs":1.5,"cat":"Sinks & Disposals","list":415,"sa":415,"ah":625,"hol":830,"desc":"Dedicated filtered faucet with under-sink filter (CUSTOMER SUPPLIED)","mtl":0,"qbo":"SNK-013 Install Filtered Water Faucet"},{"sku":"SNK-014","name":"Replace Bathtub Waste & Overflow","hrs":1,"cat":"Sinks & Disposals","list":275,"sa":275,"ah":415,"hol":550,"desc":"New waste and overflow assembly with trip lever or toe-touch","mtl":0,"qbo":"SNK-014 Replace Bathtub Waste & Overflow"},{"sku":"SNK-015","name":"Install Wall-Hung Sink with Carrier","hrs":1,"cat":"Sinks & Disposals","list":275,"sa":275,"ah":415,"hol":550,"desc":"Commercial lavatory with carrier and ADA-compliant trap","mtl":0,"qbo":"SNK-015 Install Wall-Hung Sink with Carrier"},{"sku":"SNK-016","name":"Replace Commercial Floor Sink","hrs":5,"cat":"Sinks & Disposals","list":1375,"sa":1375,"ah":2065,"hol":2750,"desc":"Floor sink replacement with grate and trap primer check (EXCLUDES concrete finish and or tile)","mtl":0,"qbo":"SNK-016 Replace Commercial Floor Sink"},{"sku":"SNK-017","name":"Replace Laundry Box / Washer Valves","hrs":1,"cat":"Sinks & Disposals","list":275,"sa":275,"ah":415,"hol":550,"desc":"Recessed washer box with new supply valves","mtl":0,"qbo":"SNK-017 Replace Laundry Box / Washer Valves"},{"sku":"SNK-018","name":"Replace Drain Lines Under Sink","hrs":1,"cat":"Sinks & Disposals","list":330,"sa":330,"ah":495,"hol":660,"desc":"Replace Drain Lines Under Sink","mtl":52,"qbo":"SNK-018 Replace Drain Lines Under Sink"},{"sku":"TOI-001","name":"Replace Toilet Flapper","hrs":0.25,"cat":"Toilets & Urinals","list":95,"sa":300,"ah":145,"hol":190,"desc":"Replace standard flapper","mtl":24,"qbo":"TOI-001 Replace Toilet Flapper"},{"sku":"TOI-002","name":"Replace Toilet Fill Valve","hrs":0.25,"cat":"Toilets & Urinals","list":140,"sa":345,"ah":210,"hol":280,"desc":"Replace standard fill valve","mtl":70,"qbo":"TOI-002 Replace Toilet Fill Valve"},{"sku":"TOI-003","name":"Replace Toilet Supply Line","hrs":0.25,"cat":"Toilets & Urinals","list":105,"sa":315,"ah":160,"hol":210,"desc":"Replace braided supply line (12\" Standard)","mtl":36,"qbo":"TOI-003 Replace Toilet Supply Line"},{"sku":"TOI-004","name":"Replace Toilet Shutoff Valve","hrs":0.5,"cat":"Toilets & Urinals","list":200,"sa":335,"ah":300,"hol":400,"desc":"Replace accessible angle stop","mtl":60,"qbo":"TOI-004 Replace Toilet Shutoff Valve"},{"sku":"TOI-005","name":"Rebuild Toilet Tank","hrs":0.5,"cat":"Toilets & Urinals","list":205,"sa":340,"ah":310,"hol":410,"desc":"Fill valve, flapper and tank hardware","mtl":64,"qbo":"TOI-005 Rebuild Toilet Tank"},{"sku":"TOI-006","name":"Reset Existing Toilet","hrs":0.5,"cat":"Toilets & Urinals","list":150,"sa":285,"ah":225,"hol":300,"desc":"Pull/reset toilet with new wax seal","mtl":7.98,"qbo":"TOI-006 Reset Existing Toilet"},{"sku":"TOI-007","name":"Install Customer-Supplied Toilet","hrs":1,"cat":"Toilets & Urinals","list":285,"sa":285,"ah":430,"hol":570,"desc":"Remove existing and install supplied toilet","mtl":7.98,"qbo":"TOI-007 Install Customer-Supplied Toilet"},{"sku":"TOI-008","name":"Furnish & Install Standard Toilet","hrs":1,"cat":"Toilets & Urinals","list":705,"sa":705,"ah":1060,"hol":1410,"desc":"Contractor-grade toilet allowance","mtl":429.9,"qbo":"TOI-008 Furnish & Install Standard Toilet"},{"sku":"TOI-009","name":"Furnish & Install Comfort Height Toilet","hrs":1,"cat":"Toilets & Urinals","list":780,"sa":780,"ah":1170,"hol":1560,"desc":"Comfort-height toilet allowance","mtl":503.54,"qbo":"TOI-009 Furnish & Install Comfort Height Toilet"},{"sku":"TOI-010","name":"Furnish & Install Commercial Flushometer Toilet","hrs":1.5,"cat":"Toilets & Urinals","list":415,"sa":415,"ah":625,"hol":830,"desc":"Floor-mount commercial bowl with flushometer valve","mtl":0,"qbo":"TOI-010 Furnish & Install Commercial Flushometer Toilet"},{"sku":"TOI-011","name":"Replace Flushometer / Flush Valve Assembly","hrs":0.5,"cat":"Toilets & Urinals","list":140,"sa":275,"ah":210,"hol":280,"desc":"Complete manual or sensor flushometer replacement","mtl":0,"qbo":"TOI-011 Replace Flushometer / Flush Valve Assembly"},{"sku":"TOI-012","name":"Rebuild Flushometer - Kit","hrs":0.5,"cat":"Toilets & Urinals","list":140,"sa":275,"ah":210,"hol":280,"desc":"Rebuild existing flushometer with manufacturer kit","mtl":0,"qbo":"TOI-012 Rebuild Flushometer - Kit"},{"sku":"TOI-013","name":"Replace Urinal - Commercial","hrs":1.5,"cat":"Toilets & Urinals","list":415,"sa":415,"ah":625,"hol":830,"desc":"Remove and reset wall-hung urinal with new carrier trim","mtl":0,"qbo":"TOI-013 Replace Urinal - Commercial"},{"sku":"TOI-014","name":"Install Toilet Auto-Flush Retrofit Kit","hrs":1,"cat":"Toilets & Urinals","list":275,"sa":275,"ah":415,"hol":550,"desc":"Sensor retrofit on existing flushometer","mtl":0,"qbo":"TOI-014 Install Toilet Auto-Flush Retrofit Kit"},{"sku":"WTR-001","name":"Water Heater Diagnostic","hrs":1,"cat":"Water Heaters","list":275,"sa":275,"ah":415,"hol":550,"desc":"Diagnose standard tank water heater","mtl":0,"qbo":"WTR-001 Water Heater Diagnostic"},{"sku":"WTR-002","name":"Replace Electric Water Heater - 40 Gal","hrs":4,"cat":"Water Heaters","list":1855,"sa":1855,"ah":2785,"hol":3710,"desc":"Install standard 40 gallon electric water heater from the shop, use 2 supply lines 1\" cupling pvc,3/4\" sharkbite cupling and water heater pan","mtl":751.08,"qbo":"WTR-002 Replace Electric Water Heater - 40 Gal"},{"sku":"WTR-003","name":"Replace Electric Water Heater - 50 Gal","hrs":4,"cat":"Water Heaters","list":2105,"sa":2105,"ah":3160,"hol":4210,"desc":"Install standard 50 gallon electric water heater from the shop, use 2 supply lines 1\" cupling pvc,3/4\" sharkbite cupling and water heater pan","mtl":1000.08,"qbo":"WTR-003 Replace Electric Water Heater - 50 Gal"},{"sku":"WTR-004","name":"Replace Gas Water Heater - 40 Gal","hrs":4,"cat":"Water Heaters","list":1980,"sa":1980,"ah":2970,"hol":3960,"desc":"Install standard 40 gallon gas water heater from the shop, use 2 supply lines 1\" cupling pvc,3/4\" sharkbite cupling and water heater pan and 1' by 3\" exhaust vent","mtl":878.12,"qbo":"WTR-004 Replace Gas Water Heater - 40 Gal"},{"sku":"WTR-005","name":"Replace Gas Water Heater - 50 Gal","hrs":4,"cat":"Water Heaters","list":2270,"sa":2270,"ah":3405,"hol":4540,"desc":"Install standard 50 gallon gas water heater from the shop, use 2 supply lines 1\" cupling pvc,3/4\" sharkbite cupling and water heater pan and 1' by 3\" exhaust vent","mtl":1165.112,"qbo":"WTR-005 Replace Gas Water Heater - 50 Gal"},{"sku":"WTR-006","name":"Replace Water Heater Expansion Tank","hrs":0.5,"cat":"Water Heaters","list":220,"sa":355,"ah":330,"hol":440,"desc":"install new expantion tank with a 3/4\" female copper threaded by sweat adapter and strap with banding iron.","mtl":80,"qbo":"WTR-006 Replace Water Heater Expansion Tank"},{"sku":"WTR-007","name":"Replace Water Heater T&P Valve","hrs":0.5,"cat":"Water Heaters","list":230,"sa":365,"ah":345,"hol":460,"desc":"Standard T&P valve","mtl":90,"qbo":"WTR-007 Replace Water Heater T&P Valve"},{"sku":"WTR-008","name":"Flush Tanked Water Heater","hrs":1,"cat":"Water Heaters","list":305,"sa":305,"ah":460,"hol":610,"desc":"Flush tanked water heater with hose and replace drain valve after draining with 3/4\" brass nipple by 4\" and 3/4\" ball valve","mtl":30,"qbo":"WTR-008 Flush Tanked Water Heater"},{"sku":"WTR-009","name":"Tankless Water Heater Flush","hrs":1,"cat":"Water Heaters","list":345,"sa":345,"ah":520,"hol":690,"desc":"Flush tankless water heater with 1 gallong of white vinigar, use sand paper to clean igniter.","mtl":70,"qbo":"WTR-009 Tankless Water Heater Flush"},{"sku":"WTR-010","name":"Tankless Water Heater Replacement","hrs":6,"cat":"Water Heaters","list":3990,"sa":3990,"ah":5985,"hol":7980,"desc":"Install tankless water heater we provide and install isolation kit with 3 brass adapters  1/2\" pvc coupling, 1/2\" pvc tee and 1/2\" pvc 90","mtl":2340,"qbo":"WTR-010 Tankless Water Heater Replacement"},{"sku":"WTR-011","name":"Replace Water Heater Element / Thermostat","hrs":1,"cat":"Water Heaters","list":275,"sa":275,"ah":415,"hol":550,"desc":"Diagnose and replace electric element or thermostat","mtl":0,"qbo":"WTR-011 Replace Water Heater Element / Thermostat"},{"sku":"WTR-012","name":"Replace Gas Control Valve / Thermocouple","hrs":1.5,"cat":"Water Heaters","list":415,"sa":415,"ah":625,"hol":830,"desc":"Replace gas valve or thermocouple on tank heater","mtl":0,"qbo":"WTR-012 Replace Gas Control Valve / Thermocouple"},{"sku":"WTR-013","name":"Install Hot Water Recirculation Pump","hrs":1.5,"cat":"Water Heaters","list":415,"sa":415,"ah":625,"hol":830,"desc":"Pump and timer installation on existing system","mtl":0,"qbo":"WTR-013 Install Hot Water Recirculation Pump"},{"sku":"WTR-014","name":"Replace Commercial Water Heater - 75 Gal","hrs":6,"cat":"Water Heaters","list":1650,"sa":1650,"ah":2475,"hol":3300,"desc":"Commercial tank heater replacement including code-required trim","mtl":0,"qbo":"WTR-014 Replace Commercial Water Heater - 75 Gal"},{"sku":"WTR-015","name":"Install Water Heater Drain Pan & Line","hrs":1.5,"cat":"Water Heaters","list":415,"sa":415,"ah":625,"hol":830,"desc":"Pan with routed drain line to approved termination","mtl":0,"qbo":"WTR-015 Install Water Heater Drain Pan & Line"},{"sku":"WTR-016","name":"Replace T&P Discharge Line","hrs":2,"cat":"Water Heaters","list":550,"sa":550,"ah":825,"hol":1100,"desc":"Re-pipe relief valve discharge to code-approved termination","mtl":0,"qbo":"WTR-016 Replace T&P Discharge Line"},{"sku":"WTR-017","name":"Relocate Water Heater - Same Floor","hrs":5,"cat":"Water Heaters","list":1375,"sa":1375,"ah":2065,"hol":2750,"desc":"Move heater within same level including water, gas and vent changes","mtl":0,"qbo":"WTR-017 Relocate Water Heater - Same Floor"},{"sku":"WTR-018","name":"Convert Tank to Tankless","hrs":8,"cat":"Water Heaters","list":2200,"sa":2200,"ah":3300,"hol":4400,"desc":"Tankless unit with gas, vent and condensate modifications","mtl":0,"qbo":"WTR-018 Convert Tank to Tankless"},{"sku":"WTR-019","name":"Replace Point-of-Use Mini Tank Heater","hrs":2,"cat":"Water Heaters","list":550,"sa":550,"ah":825,"hol":1100,"desc":"Under-sink mini tank heater replacement","mtl":0,"qbo":"WTR-019 Replace Point-of-Use Mini Tank Heater"},{"sku":"WTR-020","name":"Replace Hydronic Circulator Pump","hrs":2,"cat":"Water Heaters","list":550,"sa":550,"ah":825,"hol":1100,"desc":"Circulator pump with isolation flanges and gaskets","mtl":0,"qbo":"WTR-020 Replace Hydronic Circulator Pump"},{"sku":"WTR-021","name":"Replace Boiler Expansion Tank","hrs":1.5,"cat":"Water Heaters","list":415,"sa":415,"ah":625,"hol":830,"desc":"Expansion tank replacement and system re-pressurize","mtl":0,"qbo":"WTR-021 Replace Boiler Expansion Tank"},{"sku":"WTR-022","name":"Replace Boiler Pressure Relief Valve","hrs":1,"cat":"Water Heaters","list":275,"sa":275,"ah":415,"hol":550,"desc":"Relief valve replacement with discharge piping check","mtl":0,"qbo":"WTR-022 Replace Boiler Pressure Relief Valve"}],"fees":{"FEE-001":["FEE-001 Dispatch / Service Call Fee"],"FEE-002":["FEE-002 After-Hours Premium"],"FEE-003":["FEE-003 Holiday Premium"],"FEE-004":["FEE-004 Stand-Alone Minimum Adjustment"],"FEE-005":["FEE-005 Time and Material Labor - per hour"],"FEE-006":["FEE-006 Time and Material - Materials"],"FEE-007":["FEE-007 Permit Fee - Pass Through"]},"hol":[["2026-01-01","New Year's Day"],["2026-05-25","Memorial Day"],["2026-07-04","Independence Day"],["2026-09-07","Labor Day"],["2026-11-26","Thanksgiving Day"],["2026-12-25","Christmas Day"],["2027-01-01","New Year's Day"],["2027-05-31","Memorial Day"],["2027-07-04","Independence Day"],["2027-09-06","Labor Day"],["2027-11-25","Thanksgiving Day"],["2027-12-25","Christmas Day"],["2028-01-01","New Year's Day"],["2028-05-29","Memorial Day"],["2028-07-04","Independence Day"],["2028-09-04","Labor Day"],["2028-11-23","Thanksgiving Day"],["2028-12-25","Christmas Day"]]};
+const DEMO = /*__DEMO__*/false;
+const APP_VER = "1.0";
+
+/* ---------- settings & rules (from the Part 1 price book and Part 2 pay plan) ---------- */
+const RULES = {
+  laborRate: 275, minTicket: 275, leadRate: 43, helperRate: 27, mtlMarkup: 1.0, dispatch: 95,
+  mult: {"Mon-Thu":1, "Friday":1, "Weekend":1.5, "Holiday":2, "Emergency":1.5},
+  minWage: 7.25, otAfter: 40, otFactor: .5, stdBook: 30, holHrs: 10,
+  ptoLead: 32.25, ptoHelper: 20.25
+};
+const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const KEY = "saucierField.v1";
+
+/* ---------- storage ---------- */
+let S;
+function blank(){return {settings:{lead:"",helper:"",crew:1,officeEmail:"",acctEmail:"",showPay:true,office:false,ptoLead:RULES.ptoLead,ptoHelper:RULES.ptoHelper,terms:"Due on receipt"},tickets:[],weeks:{},prices:null,customers:{}}}
+function load(){try{const j=localStorage.getItem(KEY);if(j){const o=JSON.parse(j);const b=blank();o.settings=Object.assign(b.settings,o.settings||{});return Object.assign(b,o)}}catch(e){}return null}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));return true}catch(e){toast("Could not save on this device. Storage may be full: clear old tickets in Settings.");return false}}
+
+/* photos in IndexedDB */
+let idb=null;
+function openDB(){return new Promise(res=>{try{const r=indexedDB.open("saucierPhotos",1);r.onupgradeneeded=()=>r.result.createObjectStore("p");r.onsuccess=()=>{idb=r.result;res(idb)};r.onerror=()=>res(null)}catch(e){res(null)}})}
+function pPut(id,data){return new Promise(res=>{if(!idb)return res(false);try{const t=idb.transaction("p","readwrite");t.objectStore("p").put(data,id);t.oncomplete=()=>res(true);t.onerror=()=>res(false)}catch(e){res(false)}})}
+function pGet(id){return new Promise(res=>{if(!idb)return res(null);try{const r=idb.transaction("p").objectStore("p").get(id);r.onsuccess=()=>res(r.result||null);r.onerror=()=>res(null)}catch(e){res(null)}})}
+function pDel(id){try{idb&&idb.transaction("p","readwrite").objectStore("p").delete(id)}catch(e){}}
+
+/* ---------- price book ---------- */
+let ITEMS=[], BYSKU={};
+function qboName(sku,name){return (sku+" "+String(name).trim()).replace(/:/g,"-").replace(/'/g,"").slice(0,100)}
+function setPrices(items){
+  ITEMS=items.filter(i=>i.sku!=="FEE-005");
+  BYSKU={};ITEMS.forEach(i=>{i.qbo=i.qbo||qboName(i.sku,i.name);BYSKU[i.sku]=i});
+}
+function priceFor(it,dt){return dt==="Holiday"?it.hol:(dt==="Weekend"||dt==="Emergency")?it.ah:it.list}
+const FEE = n => DATA.fees[n][0];
+
+/* ---------- dates & day type ---------- */
+const pad=n=>String(n).padStart(2,"0");
+function iso(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+function parse(s){const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)}
+function today(){return iso(new Date())}
+function mondayOf(s){const d=parse(s);const k=(d.getDay()+6)%7;d.setDate(d.getDate()-k);return iso(d)}
+function addDays(s,n){const d=parse(s);d.setDate(d.getDate()+n);return iso(d)}
+function dayName(s){return DAYS[(parse(s).getDay()+6)%7]}
+function holidayName(s){const h=holidays().find(h=>h[0]===s);return h?h[1]:""}
+function holidays(){return (S&&S.holidays)||DATA.hol}
+function dayType(s,emerg){if(holidayName(s))return "Holiday";const k=(parse(s).getDay()+6)%7;if(k>=5)return "Weekend";if(k===4)return "Friday";return emerg?"Emergency":"Mon-Thu"}
+function usd(n){return (n<0?"-":"")+"$"+Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function hrs(n){return (Math.round(n*100)/100).toString()}
+function fmtDate(s){const d=parse(s);return DAYS[(d.getDay()+6)%7].slice(0,3)+" "+(d.getMonth()+1)+"/"+d.getDate()}
+function mdy(s){const d=parse(s);return pad(d.getMonth()+1)+"/"+pad(d.getDate())+"/"+d.getFullYear()}
+const r2=n=>Math.round(n*100)/100;
+const q4=n=>Math.round(Number(n||0)*4)/4;
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+/* ---------- ticket math ---------- */
+function custLabel(t){const c=t.customer||{};return [c.name,[c.street,c.city].filter(Boolean).join(", ")].filter(Boolean).join(" - ")}
+function isStandAlone(t){
+  if(t.standAlone==="yes")return true; if(t.standAlone==="no")return false;
+  const sk=t.lines.filter(l=>BYSKU[l.sku]);
+  return sk.length===1&&Number(sk[0].qty)===1&&!(Number(t.tm.lead)>0||Number(t.tm.helper)>0)&&BYSKU[sk[0].sku].sa>BYSKU[sk[0].sku].list;
+}
+function calc(t){
+  const dt=dayType(t.date,t.emergency), m=RULES.mult[dt];
+  const inv=[], hasHelper=!!(t.helper||"").trim();
+  let leadPay=0, helperPay=0, leadHrs=0, helperHrs=0, book=0;
+  const premCode = dt==="Holiday"?"FEE-003":(m>1?"FEE-002":null);
+  const premLabel = dt==="Holiday"?"Holiday premium":"After-hours premium";
+  t.lines.forEach(l=>{
+    const it=BYSKU[l.sku]; if(!it)return; const q=Number(l.qty)||0; if(q<=0)return;
+    inv.push({item:it.qbo,code:it.sku,desc:it.name,qty:q,rate:it.list,amt:r2(q*it.list)});
+    if(premCode){const p=priceFor(it,dt)-it.list;if(p>0)inv.push({item:FEE(premCode),code:premCode,desc:premLabel+" - "+it.name,qty:q,rate:p,amt:r2(q*p)})}
+    const ph=it.hrs*q; book+=ph; const crew=hasHelper?(l.crew||"Both"):"Lead";
+    if(crew!=="Helper"){leadPay+=ph*m*RULES.leadRate;leadHrs+=ph}
+    if(crew!=="Lead"&&hasHelper){helperPay+=ph*m*RULES.helperRate;helperHrs+=ph}
+  });
+  if(isStandAlone(t)){const l=t.lines.find(l=>BYSKU[l.sku]);if(l){const it=BYSKU[l.sku];const d=it.sa-it.list;if(d>0)inv.push({item:FEE("FEE-004"),code:"FEE-004",desc:"Stand-alone minimum - "+it.name,qty:1,rate:d,amt:d})}}
+  const tl=q4(t.tm.lead), th=hasHelper?q4(t.tm.helper):0, tmh=tl+th;
+  if(tmh>0){
+    inv.push({item:FEE("FEE-005"),code:"FEE-005",desc:"Time and material labor ("+[tl?"Lead "+hrs(tl)+" hr":"",th?"Helper "+hrs(th)+" hr":""].filter(Boolean).join(", ")+")",qty:tmh,rate:RULES.laborRate,amt:r2(tmh*RULES.laborRate)});
+    if(premCode)inv.push({item:FEE(premCode),code:premCode,desc:premLabel+" - T&M labor",qty:tmh,rate:r2(RULES.laborRate*(m-1)),amt:r2(tmh*RULES.laborRate*(m-1))});
+    leadPay+=tl*m*RULES.leadRate; helperPay+=th*m*RULES.helperRate; leadHrs+=tl; helperHrs+=th;
+  }
+  const mc=Number(t.tm.mtl)||0; if(mc>0){const p=r2(mc*(1+RULES.mtlMarkup));inv.push({item:FEE("FEE-006"),code:"FEE-006",desc:"Materials"+(t.tm.mtlDesc?": "+t.tm.mtlDesc:""),qty:1,rate:p,amt:p})}
+  const base=r2(inv.reduce((a,x)=>a+((BYSKU[x.code]||["FEE-004","FEE-005","FEE-006"].includes(x.code))?x.amt:0),0));
+  if(base>0&&base<RULES.minTicket){const d=r2(RULES.minTicket-base);inv.push({item:FEE("FEE-004"),code:"FEE-004",desc:"Minimum charge adjustment ("+usd(RULES.minTicket)+" job minimum)",qty:1,rate:d,amt:d})}
+  const pm=Number(t.tm.permit)||0; if(pm>0)inv.push({item:FEE("FEE-007"),code:"FEE-007",desc:"Permit fee (at cost)",qty:1,rate:pm,amt:pm});
+  if(t.dispatch)inv.push({item:FEE("FEE-001"),code:"FEE-001",desc:"Dispatch / service call fee",qty:1,rate:RULES.dispatch,amt:RULES.dispatch});
+  const total=r2(inv.reduce((a,b)=>a+b.amt,0));
+  return {dt,m,inv,total,book,tmh,leadPay:r2(leadPay),helperPay:r2(helperPay),leadHrs,helperHrs,hasHelper};
+}
+function ticketIssues(t){
+  const out=[], c=calc(t);
+  if(!(t.customer.name||"").trim())out.push("Customer name is missing");
+  if(!(t.customer.street||"").trim())out.push("Job address is missing");
+  if(!c.inv.some(x=>x.code!=="FEE-001"&&x.code!=="FEE-007"))out.push("No work on the ticket (add a price-book task or T&M hours)");
+  t.lines.forEach(l=>{if(!BYSKU[l.sku])out.push("Unknown SKU "+l.sku);if(Math.abs(q4(l.qty)-Number(l.qty))>1e-9)out.push(l.sku+": quantity must be in 0.25 steps")});
+  if(t.lines.some(l=>BYSKU[l.sku])&&(Number(t.tm.lead)>0||Number(t.tm.helper)>0))out.push("Has both price-book tasks and T&M hours: make sure the T&M part was approved");
+  if(!t.sig)out.push("No customer signature");
+  if(!t.check.done)out.push("Completion checklist not ticked");
+  return out;
+}
+function nextNo(date,crew){const base=date.slice(2).replace(/-/g,"")+"-"+crew+"-";let n=1;while(S.tickets.some(t=>t.no===base+pad(n)))n++;return base+pad(n)}
+function newTicket(){
+  const st=S.settings, d=today();
+  const t={id:uid(),no:nextNo(d,st.crew),crew:Number(st.crew)||1,lead:st.lead,helper:st.helper,date:d,emergency:false,
+    customer:{name:"",street:"",city:"",zip:"",phone:"",email:""},lines:[],tm:{lead:0,helper:0,mtl:0,mtlDesc:"",permit:0},
+    dispatch:false,standAlone:"auto",arrive:"",depart:"",notes:"",check:{done:false,clean:false,photos:false,explained:false},sig:"",photos:[],
+    status:"open",createdAt:Date.now(),updatedAt:Date.now()};
+  S.tickets.push(t);save();return t;
+}
+const T = id => S.tickets.find(t=>t.id===id);
+
+/* ---------- week pay (same math as the Weekly Piece Pay Record) ---------- */
+function weekKey(mon,crew){return mon+"|"+crew}
+function weekRec(mon,crew){const k=weekKey(mon,crew);if(!S.weeks[k]){const days={};DAYS.forEach((d,i)=>{const ds=addDays(mon,i);const hol=holidayName(ds)?RULES.holHrs:0;days[d]={lh:0,hh:0,lhol:hol,hhol:hol,lvac:0}});S.weeks[k]={mon,crew:Number(crew),lead:"",helper:"",days,updatedAt:0}}return S.weeks[k]}
+function weekTickets(mon,crew){return S.tickets.filter(t=>mondayOf(t.date)===mon&&(crew==null||Number(t.crew)===Number(crew))).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:(a.no<b.no?-1:1))}
+function weekPay(mon,crew){
+  const w=weekRec(mon,crew), ts=weekTickets(mon,crew).filter(t=>t.status!=="open");
+  const o={lead:{piece:0,paid:0},helper:{piece:0,paid:0},customer:0};
+  ts.forEach(t=>{const c=calc(t);o.lead.piece+=c.leadPay;o.helper.piece+=c.helperPay;o.lead.paid+=c.leadHrs;o.helper.paid+=c.helperHrs;o.customer+=c.total});
+  const sum=f=>DAYS.reduce((a,d)=>a+(Number(w.days[d][f])||0),0);
+  const fin=(p,hw,holH,vacH,pto)=>{p.hw=hw;p.floor=RULES.minWage*hw;p.makeup=Math.max(0,p.floor-p.piece);p.rr=hw?(p.piece+p.makeup)/hw:0;p.ot=Math.max(0,hw-RULES.otAfter);p.otp=RULES.otFactor*p.rr*p.ot;p.holH=holH;p.holPay=holH*pto;p.vacH=vacH;p.vacPay=vacH*pto;p.gross=p.piece+p.makeup+p.otp+p.holPay+p.vacPay;return p};
+  fin(o.lead,sum("lh"),sum("lhol"),sum("lvac"),Number(S.settings.ptoLead)||RULES.ptoLead);
+  fin(o.helper,sum("hh"),sum("hhol"),0,Number(S.settings.ptoHelper)||RULES.ptoHelper);
+  o.tickets=ts.length;o.open=weekTickets(mon,crew).filter(t=>t.status==="open").length;
+  return o;
+}
+
+/* ---------- exports ---------- */
+function csvCell(v){v=v==null?"":String(v);return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+function toCSV(rows){return rows.map(r=>r.map(csvCell).join(",")).join("\r\n")+"\r\n"}
+function toTSV(rows){return rows.map(r=>r.map(v=>String(v==null?"":v).replace(/[\t\r\n]+/g," ")).join("\t")).join("\n")}
+function payrollRows(mon){
+  const rows=[["Week start","Crew sheet","Record","Day","Day type","Customer name / address","SKU #","Crew","Qty","Lead hrs worked","Helper hrs worked","Lead holiday hrs","Helper holiday hrs","Lead vacation hrs","Ticket # / note","Lead name","Helper name"]];
+  const crews=[...new Set([...weekTickets(mon,null).filter(t=>t.status!=="open").map(t=>Number(t.crew)),...Object.values(S.weeks).filter(w=>w.mon===mon&&w.updatedAt).map(w=>Number(w.crew))])].sort();
+  crews.forEach(c=>{
+    const ts=weekTickets(mon,c).filter(t=>t.status!=="open"), w=weekRec(mon,c);
+    const lead=w.lead||(ts[0]&&ts[0].lead)||"", helper=w.helper||(ts.find(t=>t.helper)||{}).helper||"";
+    rows.push([mon,c,"NAMES","","","","","","","","","","","","",lead,helper]);
+    ts.forEach(t=>{
+      const dt=dayType(t.date,t.emergency), cust=custLabel(t), hh=!!(t.helper||"").trim();
+      t.lines.forEach(l=>{if(BYSKU[l.sku]&&Number(l.qty)>0)rows.push([mon,c,"TICKET LINE",dayName(t.date),dt,cust,l.sku,hh?(l.crew||"Both"):"Lead",Number(l.qty),"","","","","",t.no,"",""])});
+      if(q4(t.tm.lead)>0)rows.push([mon,c,"TICKET LINE",dayName(t.date),dt,cust,"FEE-005","Lead",q4(t.tm.lead),"","","","","",t.no+" T&M","",""]);
+      if(hh&&q4(t.tm.helper)>0)rows.push([mon,c,"TICKET LINE",dayName(t.date),dt,cust,"FEE-005","Helper",q4(t.tm.helper),"","","","","",t.no+" T&M","",""]);
+    });
+    DAYS.forEach(d=>{const x=w.days[d];rows.push([mon,c,"HOURS",d,"","","","","",Number(x.lh)||0,Number(x.hh)||0,Number(x.lhol)||0,Number(x.hhol)||0,Number(x.lvac)||0,x.note||"","",""])});
+  });
+  return rows;
+}
+function qboRows(ts){
+  const rows=[["InvoiceNo","Customer","InvoiceDate","DueDate","Terms","Memo","Item(Product/Service)","ItemDescription","ItemQuantity","ItemRate","ItemAmount","Taxable","ServiceDate"]];
+  ts.forEach(t=>{const c=calc(t);const memo=["Ticket "+t.no,custLabel(t),"Crew "+t.crew+": "+[t.lead,t.helper].filter(Boolean).join(" / "),c.dt!=="Mon-Thu"?c.dt+" rate":""].filter(Boolean).join(" | ");
+    c.inv.forEach(x=>rows.push([t.no,(t.customer.name||"").trim(),mdy(t.date),mdy(t.date),S.settings.terms||"Due on receipt",memo,x.item,x.desc,x.qty,x.rate,x.amt.toFixed(2),"N",mdy(t.date)]))});
+  return rows;
+}
+function customerRows(ts){
+  const rows=[["Name","Email","Phone","Street","City","State","ZIP"]], seen=new Set();
+  ts.forEach(t=>{const c=t.customer, n=(c.name||"").trim();if(!n||seen.has(n.toLowerCase()))return;seen.add(n.toLowerCase());rows.push([n,c.email||"",c.phone||"",c.street||"",c.city||"","LA",c.zip||""])});
+  return rows;
+}
+async function bundle(ts,weeks,withPhotos){
+  const out={app:"saucier-field",ver:APP_VER,exportedAt:new Date().toISOString(),from:S.settings.lead||"",crew:Number(S.settings.crew),tickets:ts,weeks,photos:{}};
+  if(withPhotos)for(const t of ts)for(const p of (t.photos||[])){const d=await pGet(p);if(d)out.photos[p]=d}
+  return out;
+}
+async function importBundle(obj){
+  if(!obj||obj.app!=="saucier-field")throw new Error("This is not a Saucier field file.");
+  let added=0,updated=0,skipped=0;
+  (obj.tickets||[]).forEach(t=>{const cur=S.tickets.find(x=>x.id===t.id);if(!cur){S.tickets.push(Object.assign({},t,{status:t.status==="open"?"open":"sent"}));added++}else if((t.updatedAt||0)>(cur.updatedAt||0)){Object.assign(cur,t,{status:cur.status==="invoiced"?"invoiced":(t.status==="open"?"open":"sent")});updated++}else skipped++});
+  Object.values(obj.weeks||{}).forEach(w=>{const k=weekKey(w.mon,w.crew);const cur=S.weeks[k];if(!cur||(w.updatedAt||0)>=(cur.updatedAt||0))S.weeks[k]=w});
+  for(const [k,v] of Object.entries(obj.photos||{}))await pPut(k,v);
+  save();return {added,updated,skipped};
+}
+
+/* ---------- output helpers (work on hosted pages; in previews, Copy always works) ---------- */
+function download(name,text,type){try{const b=new Blob([text],{type:type||"text/plain"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);toast("Saving "+name)}catch(e){toast("This browser blocked the download. Use Copy instead.")}}
+async function copy(text,btn){try{await navigator.clipboard.writeText(text);toast("Copied")}catch(e){const ta=btn&&btn.closest(".card")&&btn.closest(".card").querySelector("textarea.copysrc");if(ta){ta.hidden=false;ta.value=text;ta.select();toast("Select all and copy the text in the box")}else toast("Copy was blocked")}}
+async function share(name,text){try{const f=new File([text],name,{type:"application/json"});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:name,text:"Saucier field tickets "+name});return true}}catch(e){if(e&&e.name==="AbortError")return false}download(name,text,"application/json");return true}
+let toastT;function toast(m){const h=document.getElementById("toastHost");h.innerHTML='<div class="toast" role="status">'+esc(m)+"</div>";clearTimeout(toastT);toastT=setTimeout(()=>h.innerHTML="",2600)}
+
+/* ---------- view state ---------- */
+const V={tab:"tickets",ticket:null,pickFor:null,cat:"All",q:"",pbDay:"Mon-Thu",open:null,week:mondayOf(today()),oweek:mondayOf(today()),sendOut:null,confirmDel:false,custCopy:false};
+function go(tab){V.tab=tab;V.confirmDel=false;V.custCopy=false;if(tab!=="ticket")V.ticket=null;render();window.scrollTo(0,0)}
+
+function render(){
+  const st=S.settings;
+  document.getElementById("hdrCrew").textContent=st.office?"Office":(st.lead?"Crew "+st.crew+" · "+st.lead.split(" ")[0]:"");
+  const tabs=st.office?[["pricebook","Price book"],["tickets","Tickets"],["office","Office"]]:[["pricebook","Price book"],["tickets","Tickets"],["week","My week"]];
+  const cur=V.tab==="ticket"?"tickets":V.tab;
+  document.getElementById("tabs").innerHTML=tabs.map(([k,l])=>`<button data-act="go" data-v="${k}" ${cur===k?'aria-current="page"':""}>${l}</button>`).join("");
+  const m=document.getElementById("main");
+  if(!st.lead&&!st.office&&V.tab!=="settings"){m.innerHTML=viewSetup();return}
+  m.innerHTML=({pricebook:viewPB,tickets:viewTickets,ticket:viewTicket,week:viewWeek,office:viewOffice,settings:viewSettings})[V.tab]();
+  if(V.tab==="ticket")afterTicket();
+}
+
+/* ---------- setup ---------- */
+function viewSetup(){const st=S.settings;return `
+<div class="card"><h2>Set up this phone</h2><p class="muted">One phone per Lead Plumber. The Lead records every ticket for the crew, including the Helper's hours.</p>
+<label class="f">Your name (Lead Plumber)<input id="su_lead" value="${esc(st.lead)}" autocomplete="name"></label>
+<label class="f">Your usual Helper (leave blank if you work alone)<input id="su_helper" value="${esc(st.helper)}"></label>
+<label class="f">Crew sheet number (the office tells you: 1, 2 or 3)<select id="su_crew">${[1,2,3].map(n=>`<option ${Number(st.crew)===n?"selected":""}>${n}</option>`).join("")}</select></label>
+<button class="btn primary" data-act="setup">Start</button>
+<button class="btn" data-act="officeOn">This is the office computer</button></div>`}
+
+/* ---------- price book ---------- */
+function viewPB(){
+  const cats=["All",...new Set(ITEMS.map(i=>i.cat))];
+  const q=V.q.trim().toLowerCase();
+  const list=ITEMS.filter(i=>(V.cat==="All"||i.cat===V.cat)&&(!q||(i.sku+" "+i.name+" "+i.desc).toLowerCase().includes(q)));
+  const t=V.pickFor&&T(V.pickFor);
+  return `${t?`<div class="pickbar"><div class="grow small"><b>Adding to ticket ${esc(t.no)}</b><br>${t.lines.length} task${t.lines.length===1?"":"s"} on it · ${esc(dayType(t.date,t.emergency))} prices</div><button class="btn" data-act="pickDone">Done</button></div>`:""}
+<div class="card"><input id="pbq" type="search" placeholder="Search: water heater, WTR-004, disposal" value="${esc(V.q)}" aria-label="Search the price book">
+<div class="chips" role="group" aria-label="Category">${cats.map(c=>`<button class="chip" data-act="cat" data-v="${esc(c)}" aria-pressed="${V.cat===c}">${esc(c)}</button>`).join("")}</div>
+${t?"":`<div class="seg" role="group" aria-label="Show prices for">${[["Mon-Thu","Regular"],["Weekend","After-hours / weekend"],["Holiday","Holiday"]].map(([k,l])=>`<button data-act="pbday" data-v="${k}" aria-pressed="${V.pbDay===k}">${l}</button>`).join("")}</div>`}</div>
+<div class="card"><div class="small muted">${list.length} of ${ITEMS.length} tasks · prices at the ${t?esc(dayType(t.date,t.emergency)):({"Mon-Thu":"regular","Weekend":"after-hours","Holiday":"holiday"})[V.pbDay]} rate</div><div class="list">
+${list.map(i=>{const dt=t?dayType(t.date,t.emergency):V.pbDay;const opened=V.open===i.sku;const onT=t&&t.lines.find(l=>l.sku===i.sku);return `
+<button class="item" data-act="${t?"pick":"pbopen"}" data-v="${i.sku}"><div class="grow" style="min-width:0"><div class="t">${esc(i.name)}</div><div class="s">${i.sku} · ${hrs(i.hrs)} book hr${i.hrs===1?"":"s"}${onT?` · <b>on ticket ×${hrs(onT.qty)}</b>`:""}</div></div><div class="price num">${usd(priceFor(i,dt))}</div></button>
+${opened&&!t?`<div class="note info small"><div>${esc(i.desc||"")}</div><div class="kv num" style="margin-top:6px"><span>Regular price</span><b>${usd(i.list)}</b><span>Only task on the call (stand-alone)</span><b>${usd(i.sa)}</b><span>After-hours / weekend</span><b>${usd(i.ah)}</b><span>Holiday</span><b>${usd(i.hol)}</b>${S.settings.showPay?`<span>Pays Lead / Helper (regular day)</span><b>${usd(i.hrs*RULES.leadRate)} / ${usd(i.hrs*RULES.helperRate)}</b>`:""}${i.mtl?`<span>Material included (marked up)</span><b>${usd(i.mtl)}</b>`:""}</div></div>`:""}`}).join("")||'<p class="muted">Nothing matches. Try fewer words, or use T&M on the ticket if the task is not in the book.</p>'}
+</div></div>
+<div class="card small muted">Every job has a ${usd(RULES.minTicket)} minimum charge before any after-hours or holiday premium, permit or dispatch fee. A single task uses its stand-alone price instead, which already includes the minimum. Time and material labor (FEE-005) is ${usd(RULES.laborRate)} per hour per person, in 15-minute steps, and only on jobs the service manager approved as T&M. Add T&M hours on the ticket itself.</div>`;
+}
+
+/* ---------- tickets ---------- */
+function viewTickets(){
+  const mine=S.settings.office?S.tickets:S.tickets.filter(t=>Number(t.crew)===Number(S.settings.crew));
+  const sorted=[...mine].sort((a,b)=>b.date.localeCompare(a.date)||b.no.localeCompare(a.no));
+  const open=sorted.filter(t=>t.status==="open");
+  const groups={};sorted.forEach(t=>{(groups[t.date]=groups[t.date]||[]).push(t)});
+  return `${DEMO&&S.demo?`<div class="demo">These are <b>example tickets</b> so you can see how it works. Clear them in Settings before real use.</div>`:""}
+<button class="btn primary" data-act="newT" style="font-size:1.1rem">+ New ticket</button>
+${open.length?`<div class="note warn">${open.length} open ticket${open.length>1?"s":""}. Finish and mark complete before you send your week.</div>`:""}
+${Object.keys(groups).length?Object.entries(groups).slice(0,40).map(([d,ts])=>`<div class="card"><div class="row"><h3 class="grow">${fmtDate(d)}</h3>${dayPill(dayType(d,false),d)}</div><div class="list">${ts.map(ticketRow).join("")}</div></div>`).join(""):`<div class="card"><h3>No tickets yet</h3><p class="muted">Tap New ticket when you arrive at a job. Add the tasks from the price book, get the customer's signature, then mark it complete.</p></div>`}`;
+}
+function dayPill(dt,d){const h=d&&holidayName(d);return `<span class="pill ${dt==="Holiday"?"p-hol":dt==="Weekend"||dt==="Emergency"?"p-prem":"p-day"}">${esc(h||dt)}${RULES.mult[dt]>1?" ×"+RULES.mult[dt]:""}</span>`}
+function ticketRow(t){const c=calc(t);return `<button class="item" data-act="openT" data-v="${t.id}"><div class="grow" style="min-width:0"><div class="t">${esc(t.customer.name||"(no customer yet)")}</div><div class="s">${esc(t.no)} · ${t.lines.length} task${t.lines.length===1?"":"s"}${c.tmh?" · T&M "+hrs(c.tmh)+" hr":""}${S.settings.office?" · Crew "+t.crew:""}</div></div><div style="text-align:right"><div class="price num">${usd(c.total)}</div><span class="pill p-${t.status}">${t.status}</span></div></button>`}
+
+function viewTicket(){
+  const t=T(V.ticket); if(!t){V.tab="tickets";return viewTickets()}
+  const c=calc(t), lock=t.status!=="open", dis=lock?"disabled":"", dt=c.dt, hh=c.hasHelper;
+  const custs=Object.keys(S.customers||{}).sort();
+  const issues=ticketIssues(t);
+  return `<div class="row"><button class="btn small" data-act="go" data-v="tickets">‹ Tickets</button><span class="grow"></span><span class="pill p-${t.status}">${t.status}</span></div>
+<div class="card"><div class="row"><h2 class="grow">Ticket ${esc(t.no)}</h2>${dayPill(dt,t.date)}</div>
+<div class="grid2"><label class="f">Date<input type="date" id="t_date" value="${t.date}" ${dis}></label>
+<label class="f">Arrive / depart<div class="row" style="flex-wrap:nowrap"><input type="time" id="t_arrive" value="${esc(t.arrive)}" ${dis} aria-label="Arrive"><input type="time" id="t_depart" value="${esc(t.depart)}" ${dis} aria-label="Depart"></div></label></div>
+${["Mon-Thu","Emergency"].includes(dt)?`<label class="check"><input type="checkbox" id="t_emerg" ${t.emergency?"checked":""} ${dis}><span>Emergency call outside 6:30 a.m. to 5:30 p.m. (after-hours price, pays 1.5×)</span></label>`:""}
+${dt==="Friday"?`<div class="small muted">Friday calls are billed and paid at the regular rate.</div>`:dt==="Weekend"?`<div class="small muted">Weekend (not a holiday): after-hours prices, pays 1.5×.</div>`:dt==="Holiday"?`<div class="small muted">${esc(holidayName(t.date))}: holiday prices, pays 2×.</div>`:""}
+</div>
+<div class="card"><h3>Customer</h3>
+<label class="f">Name (as it should appear on the invoice)<input id="c_name" list="custlist" value="${esc(t.customer.name)}" ${dis} autocomplete="off"></label><datalist id="custlist">${custs.map(n=>`<option value="${esc(n)}">`).join("")}</datalist>
+<div class="grid3"><label class="f">Job address<input id="c_street" value="${esc(t.customer.street)}" ${dis}></label><label class="f">City<input id="c_city" value="${esc(t.customer.city)}" ${dis}></label><label class="f">ZIP<input id="c_zip" inputmode="numeric" value="${esc(t.customer.zip)}" ${dis}></label></div>
+<div class="grid2"><label class="f">Phone<input id="c_phone" type="tel" value="${esc(t.customer.phone)}" ${dis}></label><label class="f">Email<input id="c_email" type="email" value="${esc(t.customer.email)}" ${dis}></label></div></div>
+<div class="card"><h3>Crew</h3><div class="grid2"><label class="f">Lead Plumber<input id="t_lead" value="${esc(t.lead)}" ${dis}></label><label class="f">Helper (blank if none)<input id="t_helper" value="${esc(t.helper)}" ${dis}></label></div></div>
+<div class="card"><div class="row"><h3 class="grow">Price-book tasks</h3>${lock?"":`<button class="btn primary small" data-act="addTasks">+ Add tasks</button>`}</div>
+${t.lines.length?t.lines.map((l,i)=>{const it=BYSKU[l.sku];if(!it)return `<div class="note bad">Unknown SKU ${esc(l.sku)} <button class="btn small" data-act="rmLine" data-v="${i}">Remove</button></div>`;return `<div class="line"><div style="min-width:0"><div class="t" style="font-weight:600">${esc(it.name)}</div><div class="small muted">${it.sku} · ${hrs(it.hrs)} book hr · ${usd(priceFor(it,dt))} each</div>
+${hh?`<div class="seg" style="margin-top:6px;max-width:260px" role="group" aria-label="Who did this task">${["Both","Lead","Helper"].map(k=>`<button data-act="lcrew" data-i="${i}" data-v="${k}" aria-pressed="${(l.crew||"Both")===k}" ${dis}>${k}</button>`).join("")}</div>`:""}</div>
+<div style="text-align:right"><div class="stepper">${lock?"":`<button data-act="qty" data-i="${i}" data-v="-1" aria-label="Less">−</button>`}<input id="q_${i}" inputmode="decimal" value="${hrs(l.qty)}" ${dis} aria-label="Quantity">${lock?"":`<button data-act="qty" data-i="${i}" data-v="1" aria-label="More">+</button>`}</div>
+<div class="num" id="la_${i}" style="margin-top:4px;font-weight:700">${usd(priceFor(it,dt)*l.qty)}</div>${lock?"":`<button class="btn small" data-act="rmLine" data-v="${i}" style="margin-top:4px">Remove</button>`}</div></div>`}).join(""):`<p class="muted small">No tasks yet. Tap Add tasks to pick from the price book.</p>`}
+${t.lines.length===1&&!lock?`<label class="f">Only task on this call?<select id="t_sa"><option value="auto" ${t.standAlone==="auto"?"selected":""}>Decide for me (only one task, quantity 1)</option><option value="yes" ${t.standAlone==="yes"?"selected":""}>Yes, charge the stand-alone minimum</option><option value="no" ${t.standAlone==="no"?"selected":""}>No, other work was done (the $275 job minimum still applies)</option></select></label>`:""}
+</div>
+<details class="card" ${(c.tmh||t.tm.mtl||t.tm.permit)?"open":""}><summary>Time & material (approved T&M jobs only)</summary>
+<p class="small muted">Use only when the service manager approved T&M before work started. Hours per person, in 15-minute steps (0.25, 0.5, 0.75). Billed ${usd(RULES.laborRate)}/hr each.</p>
+<div class="grid2"><label class="f">Lead hours billed<input id="tm_lead" inputmode="decimal" value="${t.tm.lead||""}" ${dis} placeholder="0"></label><label class="f">Helper hours billed<input id="tm_helper" inputmode="decimal" value="${t.tm.helper||""}" ${dis||(!hh?"disabled":"")} placeholder="0"></label></div>
+<div class="grid2"><label class="f">Material cost ($, from receipt)<input id="tm_mtl" inputmode="decimal" value="${t.tm.mtl||""}" ${dis} placeholder="0.00"></label><label class="f">What material<input id="tm_mtlDesc" value="${esc(t.tm.mtlDesc)}" ${dis}></label></div>
+<label class="f">Permit fee ($, at cost)<input id="tm_permit" inputmode="decimal" value="${t.tm.permit||""}" ${dis} placeholder="0.00"></label>
+<label class="check"><input type="checkbox" id="t_disp" ${t.dispatch?"checked":""} ${dis}><span>Charge dispatch / service call fee (${usd(RULES.dispatch)}), only if the office told you to</span></label>
+</details>
+<div class="card"><h3>Notes and photos</h3><textarea id="t_notes" ${dis} placeholder="What you found, what you did, anything the office should know">${esc(t.notes)}</textarea>
+<div class="photos" id="photos"></div>${lock?"":`<label class="btn" style="text-align:center">Add photo<input type="file" accept="image/*" capture="environment" id="t_photo" hidden multiple></label>`}</div>
+<div class="card"><h3>Completion</h3>
+${[["done","Work is complete and tested"],["clean","Work area cleaned up"],["photos","Before / after photos taken"],["explained","Explained the work and price to the customer"]].map(([k,l])=>`<label class="check"><input type="checkbox" data-chk="${k}" ${t.check[k]?"checked":""} ${dis}><span>${l}</span></label>`).join("")}
+<div class="small muted">Customer signature: I approve the work and the price below.</div>
+${t.sig?`<img src="${t.sig}" alt="Customer signature" style="background:#fff;border-radius:8px;border:1px solid var(--line);max-height:140px">${lock?"":`<button class="btn small" data-act="sigClear">Sign again</button>`}`:(lock?`<div class="muted small">Not signed</div>`:`<canvas class="sig" id="sig" aria-label="Signature pad"></canvas><button class="btn small" data-act="sigSave">Save signature</button>`)}
+</div>
+<div class="card" id="totals">${totalsHTML(t)}</div>
+${issues.length&&!lock?`<div class="note warn small"><b>Before you mark complete:</b><br>${issues.map(esc).join("<br>")}</div>`:""}
+${V.custCopy?custCopyHTML(t):""}
+<div class="card">${lock?`${t.status==="complete"?`<button class="btn" data-act="reopen">Reopen to make changes</button>`:`<div class="small muted">Sent to the office ${t.sentAt?new Date(t.sentAt).toLocaleString():""}. ${S.settings.office?"":"Call the office to make changes."}</div>${S.settings.office?`<button class="btn" data-act="reopen">Reopen (office)</button>`:""}`}`:`<button class="btn primary" data-act="complete">Mark complete</button>`}
+<button class="btn" data-act="custCopy">${V.custCopy?"Hide":"Show"} customer copy</button>
+${V.confirmDel?`<div class="note bad">Delete ticket ${esc(t.no)}? This cannot be undone.<div class="row" style="margin-top:8px"><button class="btn danger" data-act="delYes">Delete</button><button class="btn" data-act="delNo">Keep it</button></div></div>`:(t.status==="open"||S.settings.office?`<button class="btn danger" data-act="del">Delete ticket</button>`:"")}</div>`;
+}
+function totalsHTML(t){const c=calc(t);return `<h3>Customer price</h3><div class="scroll"><table><tbody>${c.inv.map(x=>`<tr><td>${esc(x.desc)}<div class="small muted">${esc(x.code)}${x.qty!==1?" · "+hrs(x.qty)+" × "+usd(x.rate):""}</div></td><td class="r num">${usd(x.amt)}</td></tr>`).join("")||`<tr><td class="muted">Nothing yet</td><td></td></tr>`}</tbody></table></div>
+<div class="row"><span class="grow">Total ${c.dt!=="Mon-Thu"&&c.dt!=="Friday"?"("+c.dt.toLowerCase()+" rate)":""}</span><span class="total num">${usd(c.total)}</span></div>
+${S.settings.showPay?`<div class="note info small"><b>Piece pay on this ticket</b> (${hrs(c.leadHrs)} book/T&M hrs${c.m>1?" × "+c.m:""}): Lead ${usd(c.leadPay)}${c.hasHelper?` · Helper ${usd(c.helperPay)}`:""}</div>`:""}`}
+function custCopyHTML(t){const c=calc(t);const txt=["Saucier Plumbing - Holden, LA","Ticket "+t.no+"  "+mdy(t.date),custLabel(t),"",...c.inv.map(x=>x.desc+(x.qty!==1?" ("+hrs(x.qty)+" x "+usd(x.rate)+")":"")+": "+usd(x.amt)),"","TOTAL: "+usd(c.total),"Technician: "+[t.lead,t.helper].filter(Boolean).join(" / "),"Your invoice will follow from our office."].join("\n");
+return `<div class="card"><h3>Customer copy</h3><pre class="out">${esc(txt)}</pre><textarea class="copysrc" hidden aria-label="Text to copy"></textarea><button class="btn" data-act="copyTxt" data-v="${esc(encodeURIComponent(txt))}">Copy to text or email the customer</button></div>`}
+
+async function afterTicket(){
+  const t=T(V.ticket);if(!t)return;
+  const ph=document.getElementById("photos");
+  if(ph){const parts=[];for(const id of t.photos||[]){const d=await pGet(id);if(d)parts.push(`<figure><img src="${d}" alt="Job photo">${t.status==="open"?`<button data-act="rmPhoto" data-v="${id}" aria-label="Remove photo">✕</button>`:""}</figure>`)}ph.innerHTML=parts.join("")||((t.photos||[]).length?`<span class="small muted">${t.photos.length} photo(s) on another device</span>`:"")}
+  const cv=document.getElementById("sig");if(cv)sigPad(cv);
+}
+let sigCtx=null,sigDirty=false;
+function sigPad(cv){const r=cv.getBoundingClientRect(),dpr=window.devicePixelRatio||1;cv.width=r.width*dpr;cv.height=r.height*dpr;const x=cv.getContext("2d");x.scale(dpr,dpr);x.lineWidth=2.4;x.lineCap="round";x.strokeStyle="#111";sigCtx=x;sigDirty=false;let down=false;
+  const pt=e=>{const b=cv.getBoundingClientRect();return [e.clientX-b.left,e.clientY-b.top]};
+  cv.onpointerdown=e=>{down=true;cv.setPointerCapture(e.pointerId);const [a,b]=pt(e);x.beginPath();x.moveTo(a,b)};
+  cv.onpointermove=e=>{if(!down)return;const [a,b]=pt(e);x.lineTo(a,b);x.stroke();sigDirty=true};
+  cv.onpointerup=()=>{down=false}}
+function sigData(cv){const o=document.createElement("canvas");o.width=360;o.height=120;const x=o.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,360,120);x.drawImage(cv,0,0,360,120);return o.toDataURL("image/png")}
+function shrink(file){return new Promise(res=>{const fr=new FileReader();fr.onload=()=>{const img=new Image();img.onload=()=>{const k=Math.min(1,1100/Math.max(img.width,img.height));const c=document.createElement("canvas");c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext("2d").drawImage(img,0,0,c.width,c.height);res(c.toDataURL("image/jpeg",.6))};img.onerror=()=>res(null);img.src=fr.result};fr.readAsDataURL(file)})}
+
+/* ---------- my week ---------- */
+function viewWeek(){
+  const st=S.settings, mon=V.week, crew=st.crew, w=weekRec(mon,crew);
+  const ts=weekTickets(mon,crew);
+  return `<div class="row"><button class="btn small" data-act="wk" data-v="-7" aria-label="Previous week">‹</button><div class="grow" style="text-align:center"><h2>Week of ${fmtDate(mon)}</h2><div class="small muted">Mon ${mdy(mon)} to Sun ${mdy(addDays(mon,6))} · payday Wed ${mdy(addDays(mon,9))}</div></div><button class="btn small" data-act="wk" data-v="7" aria-label="Next week">›</button></div>
+<div class="card"><h3>Hours worked</h3><p class="small muted">Every hour on the clock, on site and off (driving, supply house, shop). Holiday and vacation hours are paid time off, not hours worked. Helpers do not earn paid vacation.</p>
+<div class="scroll"><table><thead><tr><th>Day</th><th class="r">Lead</th><th class="r">Helper</th><th class="r">Lead holiday</th><th class="r">Helper holiday</th><th class="r">Lead vacation</th></tr></thead><tbody>
+${DAYS.map((d,i)=>{const x=w.days[d],ds=addDays(mon,i),h=holidayName(ds);return `<tr><td>${d.slice(0,3)} ${parse(ds).getMonth()+1}/${parse(ds).getDate()}${h?`<div class="small" style="color:var(--bad)">${esc(h)}</div>`:""}</td>${["lh","hh","lhol","hhol","lvac"].map(f=>`<td class="r"><input data-wk="${d}|${f}" inputmode="decimal" value="${Number(x[f])||""}" placeholder="0" style="width:64px;text-align:right;padding:8px 6px" aria-label="${d} ${f}"></td>`).join("")}</tr>`}).join("")}
+<tr><th>Week</th>${["lh","hh","lhol","hhol","lvac"].map(f=>`<th class="r num" id="ws_${f}">${hrs(DAYS.reduce((a,d)=>a+(Number(w.days[d][f])||0),0))}</th>`).join("")}</tr></tbody></table></div></div>
+<div id="wkSum">${weekSumHTML(mon,crew)}</div>
+<div class="card"><h3>Send to the office</h3><p class="small muted">Do this at the end of each day or by Monday morning for last week. It sends the completed tickets and your hours for this week. Sending again is fine: the office keeps the newest copy.</p>
+<button class="btn primary" data-act="sendWeek">Send week to office</button>
+${V.sendOut?`<div class="note ok small">File ready: <b>${esc(V.sendOut.name)}</b>. Attach it to an email or text to ${esc(st.officeEmail||"the office")}. If your phone did not offer to share it, use Copy and paste the text into an email.</div><textarea class="copysrc" hidden aria-label="Text to copy"></textarea><div class="row"><button class="btn" data-act="sendShare">Share file again</button><button class="btn" data-act="sendCopy">Copy as text</button></div>`:""}
+</div>
+<div class="card"><h3>Tickets this week</h3><div class="list">${ts.map(ticketRow).join("")||'<p class="muted small">None yet.</p>'}</div></div>`;
+}
+
+function weekSumHTML(mon,crew){const st=S.settings,p=weekPay(mon,crew);return `<div class="card"><h3>This week's work</h3>
+<div class="kv num"><span>Tickets complete / open</span><b>${p.tickets} / ${p.open}</b><span>Lead book + T&M hours (standard ${RULES.stdBook})</span><b>${hrs(p.lead.paid)}</b><span>Helper book + T&M hours</span><b>${hrs(p.helper.paid)}</b><span>Customer price of completed tickets</span><b>${usd(p.customer)}</b></div>
+${p.open?`<div class="note warn small">${p.open} open ticket${p.open>1?"s":""} this week. Open tickets are not sent or paid until marked complete.</div>`:""}</div>
+${st.showPay?`<div class="card"><h3>Pay estimate</h3><div class="scroll"><table><thead><tr><th></th><th class="r">Lead</th><th class="r">Helper</th></tr></thead><tbody>
+${[["Piece + T&M pay","piece"],["Minimum-wage make-up","makeup"],["Overtime premium ("+"over "+RULES.otAfter+" hrs)","otp"],["Holiday pay","holPay"],["Vacation pay","vacPay"]].map(([l,k])=>`<tr><td>${l}</td><td class="r num">${usd(p.lead[k])}</td><td class="r num">${usd(p.helper[k])}</td></tr>`).join("")}
+<tr><th>Gross estimate</th><th class="r num">${usd(p.lead.gross)}</th><th class="r num">${usd(p.helper.gross)}</th></tr></tbody></table></div>
+<div class="small muted">Estimate only. The office checks every ticket and figures final pay on the Weekly Piece Pay Record. Holiday and vacation use the PTO rate in Settings.</div></div>`:""}
+`}
+/* ---------- office ---------- */
+function viewOffice(){
+  const mon=V.oweek, ts=weekTickets(mon,null), done=ts.filter(t=>t.status!=="open");
+  const crews=[...new Set([...ts.map(t=>Number(t.crew)),...Object.values(S.weeks).filter(w=>w.mon===mon&&w.updatedAt).map(w=>Number(w.crew))])].sort();
+  const flagged=done.map(t=>[t,ticketIssues(t)]).filter(x=>x[1].length);
+  const toInv=done.filter(t=>t.status!=="invoiced");
+  const pr=payrollRows(mon);
+  const priceBookTotal=done.reduce((a,t)=>a+calc(t).inv.filter(x=>BYSKU[x.code]||["FEE-002","FEE-003","FEE-005"].includes(x.code)).reduce((s,x)=>s+x.amt,0),0);
+  const st=S.settings;
+  return `<div class="row"><button class="btn small" data-act="owk" data-v="-7" aria-label="Previous week">‹</button><div class="grow" style="text-align:center"><h2>Office · week of ${fmtDate(mon)}</h2><div class="small muted">${mdy(mon)} to ${mdy(addDays(mon,6))} · payday Wed ${mdy(addDays(mon,9))}</div></div><button class="btn small" data-act="owk" data-v="7" aria-label="Next week">›</button></div>
+<div class="card"><h3>1. Bring in the crews' files</h3><p class="small muted">Open the files the Leads emailed or texted (you can pick several at once), or paste the text of one.</p>
+<label class="btn dark" style="text-align:center">Open field files<input type="file" id="o_files" accept=".json,application/json,text/plain" multiple hidden></label>
+<textarea id="o_paste" placeholder="Or paste a field file's text here"></textarea><button class="btn" data-act="oPaste">Import pasted text</button></div>
+<div class="card"><h3>2. Review</h3>
+<div class="scroll"><table><thead><tr><th>Crew</th><th>Lead / Helper</th><th class="r">Tickets</th><th class="r">Open</th><th class="r">Lead hrs worked</th><th class="r">Book + T&M (L / H)</th><th class="r">Customer $</th></tr></thead><tbody>
+${crews.map(c=>{const p=weekPay(mon,c),w=weekRec(mon,c),t0=ts.find(t=>Number(t.crew)===c)||{};return `<tr><td>${c}</td><td>${esc(w.lead||t0.lead||"")} / ${esc(w.helper||t0.helper||"")}</td><td class="r num">${p.tickets}</td><td class="r num">${p.open}</td><td class="r num">${w.updatedAt?hrs(p.lead.hw):'<span style="color:var(--bad)">none sent</span>'}</td><td class="r num">${hrs(p.lead.paid)} / ${hrs(p.helper.paid)}</td><td class="r num">${usd(p.customer)}</td></tr>`}).join("")||`<tr><td colspan="7" class="muted">Nothing for this week yet.</td></tr>`}
+</tbody></table></div>
+${flagged.length?`<div class="note warn small"><b>${flagged.length} ticket${flagged.length>1?"s":""} to check</b>${flagged.map(([t,is])=>`<div style="margin-top:6px"><button class="btn small" data-act="openT" data-v="${t.id}">${esc(t.no)}</button> ${esc(t.customer.name||"")}: ${is.map(esc).join("; ")}</div>`).join("")}</div>`:done.length?`<div class="note ok small">Every completed ticket passed the checks.</div>`:""}
+<div class="list">${ts.map(ticketRow).join("")}</div></div>
+<div class="card"><h3>3. Payroll: Weekly Piece Pay Record</h3>
+<p class="small">Click <b>Copy payroll lines</b>, open <i>Saucier Weekly Piece Pay Record - Field Import.xlsx</i>, click cell <b>A1</b> on the <b>IMPORT</b> tab and paste. The crew sheets and PAYROLL SUMMARY fill in. Clear any Check that is not OK, fill in Reviewed by, then email the file to accounting.</p>
+<div class="small muted">${pr.length-1} rows · ${crews.length} crew sheet${crews.length===1?"":"s"} · price-book and T&M check total ${usd(priceBookTotal)} (compare to PAYROLL SUMMARY F16)</div>
+<textarea class="copysrc" hidden aria-label="Text to copy"></textarea>
+<div class="row"><button class="btn primary" data-act="cpPay">Copy payroll lines</button><button class="btn" data-act="dlPay">Download as CSV</button></div></div>
+<div class="card"><h3>4. Invoices: QuickBooks Online</h3>
+<p class="small">Download the invoice file and import it in QuickBooks: Settings (gear) › Import data › Invoices. Each ticket becomes one invoice; its number is the ticket number. New customers can be added first with the customer file (Import data › Customers).</p>
+<div class="small muted">${toInv.length} completed ticket${toInv.length===1?"":"s"} not yet invoiced · ${usd(toInv.reduce((a,t)=>a+calc(t).total,0))}</div>
+<textarea class="copysrc" hidden aria-label="Text to copy"></textarea>
+<div class="row"><button class="btn primary" data-act="dlQbo" ${toInv.length?"":"disabled"}>Download invoice file</button><button class="btn" data-act="dlCust" ${toInv.length?"":"disabled"}>Download customer file</button><button class="btn" data-act="cpQbo" ${toInv.length?"":"disabled"}>Copy invoice file</button></div>
+${V.confirmInv?`<div class="note warn small">Mark ${toInv.length} ticket${toInv.length===1?"":"s"} as invoiced? Do this after QuickBooks accepted the import.<div class="row" style="margin-top:8px"><button class="btn primary" data-act="invYes">Mark invoiced</button><button class="btn" data-act="invNo">Not yet</button></div></div>`:`<button class="btn" data-act="invAsk" ${toInv.length?"":"disabled"}>Mark these as invoiced</button>`}</div>
+<div class="card"><h3>5. Email accounting</h3>
+<p class="small">After review, email the saved Weekly Piece Pay Record to accounting for ADP entry. Attach the workbook yourself.</p>
+<label class="f">Accounting email<input id="o_acct" type="email" value="${esc(st.acctEmail)}" placeholder="payroll@example.com"></label>
+<textarea class="copysrc" hidden aria-label="Text to copy"></textarea>
+<div class="row"><a class="btn dark" href="${mailHref(mon)}">Open email</a><button class="btn" data-act="cpMail">Copy email text</button></div></div>`;
+}
+function mailText(mon){const crews=[...new Set(weekTickets(mon,null).filter(t=>t.status!=="open").map(t=>Number(t.crew)))].sort();
+  const lines=crews.flatMap(c=>{const p=weekPay(mon,c),w=weekRec(mon,c),t0=weekTickets(mon,c)[0]||{};return [["Crew "+c+" Lead "+(w.lead||t0.lead||""),p.lead],["Crew "+c+" Helper "+(w.helper||t0.helper||""),p.helper]].filter(x=>x[1].hw||x[1].piece||x[1].holH).map(([n,x])=>`${n}: ${hrs(x.hw)} hrs worked, est. gross ${usd(x.gross)}`)});
+  return {subj:"Piece pay - week of "+mdy(mon)+" (payday "+mdy(addDays(mon,9))+")",body:["Attached is the reviewed Weekly Piece Pay Record for the week of "+mdy(mon)+" to "+mdy(addDays(mon,6))+".","Please enter it in ADP from the PAYROLL SUMMARY tab.","","Field tool estimates (the workbook is final):",...lines,"","Thanks"].join("\n")}}
+function mailHref(mon){const m=mailText(mon);return "mailto:"+encodeURIComponent(S.settings.acctEmail||"")+"?subject="+encodeURIComponent(m.subj)+"&body="+encodeURIComponent(m.body)}
+
+/* ---------- settings ---------- */
+function viewSettings(){const st=S.settings;let used=0;try{used=(localStorage.getItem(KEY)||"").length}catch(e){}
+return `<div class="card"><h2>Settings</h2>
+<label class="f">Lead Plumber on this phone<input id="s_lead" value="${esc(st.lead)}"></label>
+<label class="f">Usual Helper<input id="s_helper" value="${esc(st.helper)}"></label>
+<label class="f">Crew sheet number<select id="s_crew">${[1,2,3].map(n=>`<option ${Number(st.crew)===n?"selected":""}>${n}</option>`).join("")}</select></label>
+<label class="f">Office email (where you send your week)<input id="s_office" type="email" value="${esc(st.officeEmail)}"></label>
+<div class="grid2"><label class="f">Lead PTO rate ($/hr)<input id="s_ptoLead" inputmode="decimal" value="${st.ptoLead}"></label><label class="f">Helper PTO rate ($/hr)<input id="s_ptoHelper" inputmode="decimal" value="${st.ptoHelper}"></label></div>
+<label class="check"><input type="checkbox" id="s_showPay" ${st.showPay?"checked":""}><span>Show piece pay on tickets and the week</span></label>
+<label class="check"><input type="checkbox" id="s_office_mode" ${st.office?"checked":""}><span>Office mode (adds the Office tab for importing crew files, payroll and QuickBooks)</span></label>
+<button class="btn primary" data-act="saveSettings">Save settings</button></div>
+<div class="card"><h3>Price book</h3><div class="small muted">${ITEMS.length} tasks · ${S.prices?"updated "+esc(S.prices.updated):"2026 price book (built in)"} · labor ${usd(RULES.laborRate)}/hr · Lead ${usd(RULES.leadRate)} / Helper ${usd(RULES.helperRate)} per book hour</div>
+<details><summary>Update prices</summary><p class="small">In the Weekly Piece Pay Record, PRICE LIST tab, select A2:H141 (SKU # through Holiday price), copy, and paste here. Then send everyone the new prices file, or post it with the app.</p>
+<textarea id="s_prices" placeholder="Paste price rows here"></textarea><textarea class="copysrc" hidden aria-label="Text to copy"></textarea><div class="row"><button class="btn" data-act="pricesLoad">Use these prices</button><button class="btn" data-act="pricesFile">Download prices file</button>${S.prices?`<button class="btn" data-act="pricesReset">Back to built-in prices</button>`:""}</div></details></div>
+<div class="card"><h3>Data on this device</h3><div class="small muted">${S.tickets.length} tickets · about ${Math.round(used/1024)} KB of roughly 5,000 KB used. Photos are stored separately.</div>
+<button class="btn" data-act="purge">Remove sent tickets older than 60 days</button>
+${DEMO&&S.demo?`<button class="btn danger" data-act="clearDemo">Clear example tickets</button>`:""}
+<div class="small muted">Version ${APP_VER}. Saucier Plumbing, Holden LA.</div></div>`}
+
+/* ---------- events ---------- */
+document.addEventListener("click",async e=>{
+  const b=e.target.closest("[data-act]");if(!b)return;const a=b.dataset.act,v=b.dataset.v;const t=V.ticket&&T(V.ticket);
+  const touch=()=>{if(t){t.updatedAt=Date.now();save()}};
+  switch(a){
+  case "go":go(v);break;
+  case "setup":S.settings.lead=val("su_lead").trim();S.settings.helper=val("su_helper").trim();S.settings.crew=Number(val("su_crew"));if(!S.settings.lead){toast("Enter your name");return}save();go("tickets");break;
+  case "officeOn":S.settings.office=true;save();go("office");break;
+  case "cat":V.cat=v;render();break;
+  case "pbday":V.pbDay=v;render();break;
+  case "pbopen":V.open=V.open===v?null:v;render();break;
+  case "pick":{const tk=T(V.pickFor);const l=tk.lines.find(l=>l.sku===v);if(l)l.qty=Number(l.qty)+1;else tk.lines.push({sku:v,qty:1,crew:"Both"});tk.updatedAt=Date.now();save();toast("Added "+BYSKU[v].name);render();break}
+  case "pickDone":V.ticket=V.pickFor;V.pickFor=null;V.q="";V.tab="ticket";render();window.scrollTo(0,0);break;
+  case "newT":{const tk=newTicket();V.ticket=tk.id;V.tab="ticket";render();window.scrollTo(0,0);break}
+  case "openT":V.ticket=v;V.tab="ticket";V.confirmDel=false;V.custCopy=false;render();window.scrollTo(0,0);break;
+  case "addTasks":V.pickFor=t.id;V.tab="pricebook";V.q="";V.cat="All";render();window.scrollTo(0,0);break;
+  case "qty":{const l=t.lines[b.dataset.i];l.qty=Math.max(.25,q4(Number(l.qty)+Number(v)));touch();render();break}
+  case "rmLine":t.lines.splice(Number(v),1);touch();render();break;
+  case "lcrew":t.lines[b.dataset.i].crew=v;touch();render();break;
+  case "sigSave":{const cv=document.getElementById("sig");if(!sigDirty){toast("Have the customer sign in the box first");return}t.sig=sigData(cv);touch();render();break}
+  case "sigClear":t.sig="";touch();render();break;
+  case "rmPhoto":t.photos=t.photos.filter(p=>p!==v);pDel(v);touch();render();break;
+  case "complete":{const is=ticketIssues(t).filter(x=>!/signature|checklist|T&M part/.test(x));if(is.length){toast(is[0]);return}t.status="complete";t.completedAt=Date.now();const n=(t.customer.name||"").trim();if(n){S.customers[n]={street:t.customer.street,city:t.customer.city,zip:t.customer.zip,phone:t.customer.phone,email:t.customer.email}}touch();toast("Ticket complete");render();break}
+  case "reopen":t.status="open";touch();render();break;
+  case "custCopy":V.custCopy=!V.custCopy;render();break;
+  case "copyTxt":copy(decodeURIComponent(v),b);break;
+  case "del":V.confirmDel=true;render();break;
+  case "delNo":V.confirmDel=false;render();break;
+  case "delYes":(t.photos||[]).forEach(pDel);S.tickets=S.tickets.filter(x=>x.id!==t.id);save();go("tickets");break;
+  case "wk":V.week=addDays(V.week,Number(v));V.sendOut=null;render();break;
+  case "owk":V.oweek=addDays(V.oweek,Number(v));V.confirmInv=false;render();break;
+  case "sendWeek":{const crew=S.settings.crew, mon=V.week;const ts=weekTickets(mon,crew).filter(t=>t.status!=="open");const w=weekRec(mon,crew);w.lead=S.settings.lead;w.helper=S.settings.helper;if(!w.updatedAt)w.updatedAt=Date.now();
+    const weeks={};weeks[weekKey(mon,crew)]=w;const obj=await bundle(ts,weeks,true);const name="Saucier-Crew"+crew+"-"+(S.settings.lead||"Lead").replace(/\W+/g,"")+"-week-"+mon+"-"+new Date().toTimeString().slice(0,5).replace(":","")+".json";
+    const text=JSON.stringify(obj);V.sendOut={name,text};ts.forEach(t=>{if(t.status==="complete"){t.status="sent";t.sentAt=Date.now()}});save();render();await share(name,text);break}
+  case "sendShare":if(V.sendOut)share(V.sendOut.name,V.sendOut.text);break;
+  case "sendCopy":if(V.sendOut)copy(V.sendOut.text,b);break;
+  case "oPaste":{try{const r=await importBundle(JSON.parse(val("o_paste")));toast(`Imported: ${r.added} new, ${r.updated} updated`);render()}catch(err){toast(err.message.includes("Saucier")?err.message:"That text is not a complete field file. Copy all of it and try again.")}break}
+  case "cpPay":copy(toTSV(payrollRows(V.oweek)),b);break;
+  case "dlPay":download("Payroll lines week "+V.oweek+".csv",toCSV(payrollRows(V.oweek)),"text/csv");break;
+  case "dlQbo":download("QBO invoices week "+V.oweek+".csv",toCSV(qboRows(officeToInv())),"text/csv");break;
+  case "cpQbo":copy(toCSV(qboRows(officeToInv())),b);break;
+  case "dlCust":download("QBO customers week "+V.oweek+".csv",toCSV(customerRows(officeToInv())),"text/csv");break;
+  case "invAsk":V.confirmInv=true;render();break;
+  case "invNo":V.confirmInv=false;render();break;
+  case "invYes":officeToInv().forEach(t=>{t.status="invoiced";t.invoicedAt=Date.now()});V.confirmInv=false;save();toast("Marked invoiced");render();break;
+  case "cpMail":{const m=mailText(V.oweek);copy("To: "+(S.settings.acctEmail||"")+"\nSubject: "+m.subj+"\n\n"+m.body,b);break}
+  case "saveSettings":{const st=S.settings;st.lead=val("s_lead").trim();st.helper=val("s_helper").trim();st.crew=Number(val("s_crew"));st.officeEmail=val("s_office").trim();st.ptoLead=Number(val("s_ptoLead"))||RULES.ptoLead;st.ptoHelper=Number(val("s_ptoHelper"))||RULES.ptoHelper;st.showPay=document.getElementById("s_showPay").checked;st.office=document.getElementById("s_office_mode").checked;save();toast("Saved");go(st.office?"office":"tickets");break}
+  case "pricesLoad":{const rows=val("s_prices").trim().split(/\r?\n/).map(r=>r.split("\t"));const items=[];for(const r of rows){if(r.length<8||!/^[A-Z]{3}-\d{3}$/.test(r[0].trim())||r[0].trim()==="FEE-005")continue;const n=x=>Number(String(x).replace(/[$,]/g,""));const it={sku:r[0].trim(),name:r[1].trim(),hrs:n(r[2]),cat:r[3].trim(),list:n(r[4]),sa:n(r[5]),ah:n(r[6]),hol:n(r[7]),desc:(BYSKU[r[0].trim()]||{}).desc||"",mtl:(BYSKU[r[0].trim()]||{}).mtl||0};if([it.hrs,it.list,it.sa,it.ah,it.hol].some(isNaN)){toast("Row "+it.sku+" has a number that could not be read");return}items.push(it)}
+    if(items.length<10){toast("Paste the PRICE LIST rows A2:H141 (8 columns).");return}S.prices={updated:today(),items};setPrices(items);save();toast(items.length+" prices loaded");render();break}
+  case "pricesFile":download("prices.json",JSON.stringify({updated:(S.prices||{}).updated||today(),items:ITEMS}),"application/json");break;
+  case "pricesReset":S.prices=null;setPrices(DATA.items);save();render();break;
+  case "purge":{const cut=Date.now()-60*864e5;const old=S.tickets.filter(t=>(t.status==="sent"||t.status==="invoiced")&&parse(t.date).getTime()<cut);old.forEach(t=>(t.photos||[]).forEach(pDel));S.tickets=S.tickets.filter(t=>!old.includes(t));save();toast(old.length+" removed");render();break}
+  case "clearDemo":S.tickets.filter(t=>t.demo).forEach(t=>(t.photos||[]).forEach(pDel));S.tickets=S.tickets.filter(t=>!t.demo);Object.keys(S.weeks).forEach(k=>{if(S.weeks[k].demo)delete S.weeks[k]});S.customers={};S.demo=false;save();toast("Examples cleared");render();break;
+  }
+});
+function officeToInv(){return weekTickets(V.oweek,null).filter(t=>t.status==="sent"||t.status==="complete")}
+const val=id=>{const el=document.getElementById(id);return el?el.value:""};
+
+document.addEventListener("input",e=>{
+  const el=e.target, t=V.ticket&&T(V.ticket);
+  if(el.id==="pbq"){V.q=el.value;const pos=el.selectionStart;render();const n=document.getElementById("pbq");n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}return}
+  if(el.dataset.wk){const [d,f]=el.dataset.wk.split("|");const w=weekRec(V.week,S.settings.crew);w.days[d][f]=q4(el.value);w.updatedAt=Date.now();save();return}
+  if(el.id==="o_acct"){S.settings.acctEmail=el.value.trim();save();return}
+  if(!t||t.status!=="open")return;
+  const map={c_name:["customer","name"],c_street:["customer","street"],c_city:["customer","city"],c_zip:["customer","zip"],c_phone:["customer","phone"],c_email:["customer","email"],tm_mtlDesc:["tm","mtlDesc"]};
+  if(map[el.id]){t[map[el.id][0]][map[el.id][1]]=el.value}
+  else if(["tm_lead","tm_helper","tm_mtl","tm_permit"].includes(el.id)){t.tm[el.id.slice(3)]=Number(el.value)||0}
+  else if(["t_lead","t_helper","t_notes","t_arrive","t_depart"].includes(el.id)){t[el.id.slice(2)]=el.value}
+  else if(/^q_\d+$/.test(el.id)){t.lines[Number(el.id.slice(2))].qty=Number(el.value)||0}
+  else return;
+  t.updatedAt=Date.now();save();const tt=document.getElementById("totals");if(tt)tt.innerHTML=totalsHTML(t);
+});
+document.addEventListener("change",async e=>{
+  const el=e.target, t=V.ticket&&T(V.ticket);
+  if(el.id==="o_files"){let a=0,u=0,bad=0;for(const f of el.files){try{const r=await importBundle(JSON.parse(await f.text()));a+=r.added;u+=r.updated}catch(_){bad++}}toast(`Imported ${a} new, ${u} updated${bad?`, ${bad} file(s) not readable`:""}`);render();return}
+  if(el.dataset.wk){el.value=q4(el.value)||"";const ws=document.getElementById("wkSum");if(ws)ws.innerHTML=weekSumHTML(V.week,S.settings.crew);const w=weekRec(V.week,S.settings.crew);["lh","hh","lhol","hhol","lvac"].forEach(f=>{const c=document.getElementById("ws_"+f);if(c)c.textContent=hrs(DAYS.reduce((a,d)=>a+(Number(w.days[d][f])||0),0))});return}
+  if(!t)return;
+  if(el.id==="c_name"&&t.status==="open"){const c=S.customers[el.value.trim()];if(c&&!t.customer.street){Object.assign(t.customer,c);t.updatedAt=Date.now();save();render()}return}
+  if(el.id==="t_photo"){for(const f of el.files){const d=await shrink(f);if(!d)continue;const id="ph_"+uid();if(await pPut(id,d)){t.photos.push(id)}else toast("Photos cannot be saved in this browser")}t.updatedAt=Date.now();save();render();return}
+  if(t.status!=="open")return;
+  if(el.id==="t_date"&&el.value){t.date=el.value;if(dayType(t.date,false)!=="Mon-Thu")t.emergency=false;t.no=t.no.startsWith(t.date.slice(2).replace(/-/g,""))?t.no:nextNo(t.date,t.crew)}
+  else if(el.id==="t_emerg")t.emergency=el.checked;
+  else if(el.id==="t_disp")t.dispatch=el.checked;
+  else if(el.id==="t_sa")t.standAlone=el.value;
+  else if(el.dataset.chk)t.check[el.dataset.chk]=el.checked;
+  else if(["tm_lead","tm_helper"].includes(el.id)){t.tm[el.id.slice(3)]=q4(el.value);el.value=t.tm[el.id.slice(3)]||"";return softUpdate(t)}
+  else if(/^q_\d+$/.test(el.id)){const i=Number(el.id.slice(2)),l=t.lines[i];l.qty=Math.max(.25,q4(el.value));el.value=hrs(l.qty);const la=document.getElementById("la_"+i);if(la)la.textContent=usd(priceFor(BYSKU[l.sku],dayType(t.date,t.emergency))*l.qty);return softUpdate(t)}
+  else return;
+  t.updatedAt=Date.now();save();render();
+});
+
+function softUpdate(t){t.updatedAt=Date.now();save();const tt=document.getElementById("totals");if(tt)tt.innerHTML=totalsHTML(t)}
+/* ---------- demo data (preview only) ---------- */
+function seedDemo(){
+  const mon=mondayOf(today()), st=S.settings;st.lead="Example Lead";st.helper="Example Helper";st.crew=1;st.office=false;st.officeEmail="office@example.com";
+  const mk=(off,name,street,lines,extra)=>{const d=addDays(mon,off);const t={id:uid(),no:nextNo(d,1),crew:1,lead:st.lead,helper:st.helper,date:d,emergency:false,customer:{name,street,city:"Holden",zip:"70744",phone:"",email:""},lines:lines.map(([sku,qty])=>({sku,qty,crew:"Both"})),tm:{lead:0,helper:0,mtl:0,mtlDesc:"",permit:0},dispatch:false,standAlone:"auto",arrive:"08:00",depart:"11:30",notes:"",check:{done:true,clean:true,photos:true,explained:true},sig:"",photos:[],status:"complete",createdAt:Date.now(),updatedAt:Date.now(),demo:true};Object.assign(t,extra||{});S.tickets.push(t);return t};
+  mk(0,"Example customer A","123 Example Rd",[["WTR-004",1],["WTR-006",1],["WTR-015",1],["GAS-005",1]]);
+  mk(0,"Example customer B","45 Sample Ln",[["TOI-005",1],["DRN-001",1]]);
+  mk(1,"Example customer C","9 Demo St",[],{tm:{lead:8,helper:8,mtl:240,mtlDesc:"PEX, fittings",permit:0},notes:"Slab-leak reroute, T&M approved by service manager"});
+  mk(2,"Example customer D","77 Test Ave",[["DRN-001",1]]);
+  mk(5,"Example customer E","310 Example Rd",[["WTR-004",1]],{status:"open",check:{done:false,clean:false,photos:false,explained:false}});
+  const w=weekRec(mon,1);["Monday","Tuesday","Wednesday"].forEach(d=>{w.days[d].lh=10;w.days[d].hh=10});w.days.Saturday.lh=5;w.days.Saturday.hh=5;w.lead=st.lead;w.helper=st.helper;w.updatedAt=Date.now();w.demo=true;
+  S.demo=true;
+}
+
+/* ---------- start ---------- */
+(async function start(){
+  S=load()||blank();
+  setPrices(S.prices?S.prices.items:DATA.items);
+  if(DEMO&&!S.tickets.length&&!S.demoSeen){seedDemo();S.demoSeen=true;save()}
+  await openDB();
+  render();
+  try{const r=await fetch("prices.json",{cache:"no-store"});if(r.ok){const p=await r.json();if(p&&p.items&&p.items.length>10&&(!S.prices||p.updated>S.prices.updated)){S.prices={updated:p.updated,items:p.items};setPrices(p.items);save();render();toast("Price book updated "+p.updated)}}}catch(e){}
+  if("serviceWorker" in navigator&&location.protocol==="https:"){try{navigator.serviceWorker.register("sw.js")}catch(e){}}
+})();
+</script>
+
+</body>
+</html>
